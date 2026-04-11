@@ -282,19 +282,29 @@ export default function NewOrder() {
 
   const governorates = useMemo(() => {
     const set = new Set(rawShippingRates.map((r) => r.governorate));
+    set.add("أخرى");
     return Array.from(set).sort();
   }, [rawShippingRates]);
 
   const availableCities = useMemo(() => {
+    if (selectedGovernorate === "أخرى") return [{ governorate: "أخرى", city: "أخرى", price: 85 }];
     return rawShippingRates.filter((r) => r.governorate === selectedGovernorate);
   }, [selectedGovernorate, rawShippingRates]);
 
+  // Auto-select city when only one option available (e.g. "أخرى" governorate)
+  React.useEffect(() => {
+    if (availableCities.length === 1 && selectedCity !== availableCities[0].city) {
+      setSelectedCity(availableCities[0].city);
+    }
+  }, [availableCities, selectedCity]);
+
   const shippingCost = useMemo(() => {
     if (!selectedGovernorate || !selectedCity) return 0;
+    if (selectedGovernorate === "أخرى") return 85;
     const rate = rawShippingRates.find(
       (r) => r.governorate === selectedGovernorate && r.city === selectedCity
     );
-    return Number(rate?.price || 0);
+    return Number(rate?.price || 85);
   }, [selectedGovernorate, selectedCity, rawShippingRates]);
 
   // Tiered pricing: 1 piece = 500, 2 pieces = 950, 3 pieces = 1350

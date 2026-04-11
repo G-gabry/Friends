@@ -63,11 +63,12 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
       }
       
       // Attempt safe assignment if it exists in our rates:
-      const isValidGov = rawShippingRates.find(r => r.governorate === gov);
-      setSelectedGovernorate(isValidGov ? gov : "");
+      let matchedGov = rawShippingRates.find(r => r.governorate === gov);
+      let finalGov = matchedGov ? gov : (gov ? "أخرى" : "");
+      setSelectedGovernorate(finalGov);
       
-      const isValidCity = rawShippingRates.find(r => r.city === city && r.governorate === gov);
-      setSelectedCity(isValidCity ? city : "");
+      let matchedCity = rawShippingRates.find(r => r.city === city && r.governorate === finalGov);
+      setSelectedCity(matchedCity ? city : (city ? "أخرى" : ""));
       
       setCustomerAddress(addr);
 
@@ -80,26 +81,52 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
   // Shipping Calculation
   const governorates = useMemo(() => {
     const set = new Set(rawShippingRates.map((r) => r.governorate));
+    set.add("أخرى");
     return Array.from(set).sort();
   }, [rawShippingRates]);
 
   const availableCities = useMemo(() => {
+    if (selectedGovernorate === "أخرى") return [{ governorate: "أخرى", city: "أخرى", price: 85 }];
     return rawShippingRates.filter((r) => r.governorate === selectedGovernorate);
   }, [selectedGovernorate, rawShippingRates]);
 
+  // Auto-select city when only one option available (e.g. "أخرى" governorate)
+  useEffect(() => {
+    if (availableCities.length === 1 && selectedCity !== availableCities[0].city) {
+      setSelectedCity(availableCities[0].city);
+    }
+  }, [availableCities, selectedCity]);
+
   const shippingCost = useMemo(() => {
     if (!selectedGovernorate || !selectedCity) return 0;
+    if (selectedGovernorate === "أخرى") return 85;
     const rate = rawShippingRates.find(
       (r) => r.governorate === selectedGovernorate && r.city === selectedCity
     );
-    return Number(rate?.price || 0);
+    return Number(rate?.price || 85);
   }, [selectedGovernorate, selectedCity, rawShippingRates]);
 
-  const subTotal = useMemo(() => {
-    return editItems.reduce((acc, item) => acc + (item.unit_price * item.quantity), 0);
+  // Total pieces count
+  const totalPieces = useMemo(() => {
+    return editItems.reduce((acc, item) => acc + (item.quantity || 0), 0);
   }, [editItems]);
 
-  const grandTotal = subTotal + shippingCost;
+  // Tiered pricing: same logic as NewOrder
+  // 1pc=500, 2pc=950, 3pc=1350, 4+=(1350+(n-3)*450)
+  const tieredTotal = useMemo(() => {
+    if (totalPieces === 0) return 0;
+    if (totalPieces === 1) return 500;
+    if (totalPieces === 2) return 950;
+    if (totalPieces === 3) return 1350;
+    return 1350 + (totalPieces - 3) * 450;
+  }, [totalPieces]);
+
+  const discountSaved = useMemo(() => {
+    if (totalPieces < 2) return 0;
+    return (totalPieces * 500) - tieredTotal;
+  }, [totalPieces, tieredTotal]);
+
+  const grandTotal = tieredTotal + shippingCost;
 
   // Actions
   const handleQuantityChange = (idx, newQ) => {
@@ -136,7 +163,7 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
         customer_phone: customerPhone,
         customer_address: finalAddress,
         total_price: grandTotal,
-        status: "confirmed" // Changing status to confirmed
+        status: "confirmed",
       },
       p_items_data: editItems.map(item => ({
         product_id: item.product_id,
@@ -252,7 +279,16 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
             </div>
 
             <div className="border-t pt-2 space-y-1">
-               <div className="flex justify-between text-muted-foreground text-sm"><span>مجموع المنتجات</span><span>{subTotal} EGP</span></div>
+               <div className="flex justify-between text-muted-foreground text-sm">
+                 <span>سعر القطع ({totalPieces} قطعة)</span>
+                 <span>{tieredTotal} EGP</span>
+               </div>
+               {discountSaved > 0 && (
+                 <div className="flex justify-between text-xs text-emerald-600 font-bold">
+                   <span>🎉 خصم الكمية مُطبّق</span>
+                   <span>وفرت {discountSaved} EGP</span>
+                 </div>
+               )}
                <div className="flex justify-between text-muted-foreground text-sm"><span>الشحن</span><span>{shippingCost} EGP</span></div>
                <div className="flex justify-between font-black text-xl pt-1"><span>الإجمالي النهائي</span><span className="text-primary">{grandTotal} EGP</span></div>
             </div>

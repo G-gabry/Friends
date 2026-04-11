@@ -19,6 +19,21 @@ export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap }
   const creator = profilesMap ? profilesMap[order.user_id] : "الموظف";
   const totalQuantity = orderItems.reduce((acc, item) => acc + (item.quantity || 0), 0);
 
+  // Tiered pricing logic — mirrors NewOrder exactly
+  const computeTiered = (pieces) => {
+    if (pieces === 0) return 0;
+    if (pieces === 1) return 500;
+    if (pieces === 2) return 950;
+    if (pieces === 3) return 1350;
+    return 1350 + (pieces - 3) * 450;
+  };
+
+  const tieredTotal = computeTiered(totalQuantity);
+  const fullPriceTotal = totalQuantity * 500; // if no discount
+  const discountSaved = fullPriceTotal - tieredTotal;
+  // Shipping = stored total - tiered product total (or 0 if negative)
+  const shippingCost = Math.max(0, (order.total_price || 0) - tieredTotal);
+
   return (
     <div ref={ref} className="print-only-container hidden bg-white text-black print:block p-8" dir="rtl">
       {/* Header */}
@@ -90,12 +105,30 @@ export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap }
             <span className="font-bold text-black">{totalQuantity}</span>
           </div>
           <div className="flex justify-between py-2 text-gray-600 border-b border-gray-200">
-            <span>مصاريف الشحن:</span>
-            <span>آلي (مشمول)</span>
+            <span>سعر القطع ({totalQuantity} قطعة):</span>
+            <span className="font-bold text-black">{tieredTotal.toLocaleString()} ج.م</span>
           </div>
+          {discountSaved > 0 && (
+            <div className="flex justify-between py-2 text-green-700 border-b border-gray-200 font-bold">
+              <span>🎉 خصم الكمية:</span>
+              <span>-{discountSaved.toLocaleString()} ج.م</span>
+            </div>
+          )}
+          {shippingCost > 0 && (
+            <div className="flex justify-between py-2 text-gray-600 border-b border-gray-200">
+              <span>مصاريف الشحن:</span>
+              <span className="font-bold text-black">{shippingCost.toLocaleString()} ج.م</span>
+            </div>
+          )}
+          {shippingCost === 0 && (
+            <div className="flex justify-between py-2 text-gray-600 border-b border-gray-200">
+              <span>مصاريف الشحن:</span>
+              <span>مشمولة ضمن الإجمالي</span>
+            </div>
+          )}
           <div className="flex justify-between py-3 text-2xl font-black bg-black text-white px-4 rounded-b-md mt-2 shadow-sm">
              <span>الإجمالي:</span>
-             <span dir="ltr">{formatCurrency.format(order.total_price)}</span>
+             <span dir="ltr">{(order.total_price || 0).toLocaleString()} ج.م</span>
           </div>
         </div>
       </div>
