@@ -229,6 +229,7 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
+              {/* Governorate */}
               <div>
                 <Label>المحافظة</Label>
                 <Select value={selectedGovernorate} onValueChange={(v) => { setSelectedGovernorate(v); setSelectedCity(""); setCustomGovernorate(""); setCustomCity(""); }}>
@@ -237,42 +238,64 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
                     {governorates.map((g) => (<SelectItem key={g} value={g}>{g}</SelectItem>))}
                   </SelectContent>
                 </Select>
-                {selectedGovernorate === "أخرى" && (
-                  <Input
-                    className="mt-2"
-                    value={customGovernorate}
-                    onChange={(e) => setCustomGovernorate(e.target.value)}
-                    placeholder="اكتب اسم المحافظة / المنطقة"
-                  />
-                )}
               </div>
-              <div>
-                <Label>المدينة (لحساب الشحن)</Label>
-                {selectedGovernorate !== "أخرى" ? (
-                  <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedGovernorate}>
+
+              {/* City — only show if normal governorate is selected */}
+              {selectedGovernorate && selectedGovernorate !== "أخرى" ? (
+                <div>
+                  <Label>المدينة / المركز</Label>
+                  <Select value={selectedCity} onValueChange={setSelectedCity}>
                     <SelectTrigger><SelectValue placeholder="اختر المدينة" /></SelectTrigger>
                     <SelectContent>
-                      {availableCities.map((c) => (<SelectItem key={c.city} value={c.city}>{c.city} - {c.price} ج.م</SelectItem>))}
+                      {availableCities.map((c) => (<SelectItem key={c.city} value={c.city}>{c.city} — {c.price} ج.م</SelectItem>))}
                     </SelectContent>
                   </Select>
-                ) : (
-                  <Input
-                    value={customCity}
-                    onChange={(e) => setCustomCity(e.target.value)}
-                    placeholder="اكتب اسم المدينة / المنطقة"
-                    className="bg-orange-50 border-orange-300"
-                  />
-                )}
-                {selectedCity === "أخرى" && selectedGovernorate !== "أخرى" && (
-                  <Input
-                    className="mt-2"
-                    value={customCity}
-                    onChange={(e) => setCustomCity(e.target.value)}
-                    placeholder="اكتب اسم المدينة"
-                  />
-                )}
-              </div>
+                </div>
+              ) : selectedGovernorate !== "أخرى" ? (
+                <div>
+                  <Label>المدينة / المركز</Label>
+                  <Select disabled><SelectTrigger><SelectValue placeholder="اختر المحافظة أولاً" /></SelectTrigger></Select>
+                </div>
+              ) : null}
             </div>
+
+            {/* Custom location row — shown only when أخرى is selected */}
+            {selectedGovernorate === "أخرى" && (
+              <div className="bg-orange-50 border border-orange-300 rounded-lg p-3 space-y-2">
+                <p className="text-xs text-orange-700 font-semibold">📍 أدخل بيانات المنطقة يدوياً</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">اسم المحافظة / المنطقة</Label>
+                    <Input
+                      value={customGovernorate}
+                      onChange={(e) => setCustomGovernorate(e.target.value)}
+                      placeholder="مثال: شرم الشيخ"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">اسم المدينة / الحي</Label>
+                    <Input
+                      value={customCity}
+                      onChange={(e) => setCustomCity(e.target.value)}
+                      placeholder="مثال: النصر"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Custom city — shown only when city أخرى is selected inside a real governorate */}
+            {selectedCity === "أخرى" && selectedGovernorate !== "أخرى" && (
+              <div className="bg-orange-50 border border-orange-300 rounded-lg p-3">
+                <Label className="text-xs text-orange-700 font-semibold">📍 اسم المدينة / المركز غير الموجود في القائمة</Label>
+                <Input
+                  className="mt-1"
+                  value={customCity}
+                  onChange={(e) => setCustomCity(e.target.value)}
+                  placeholder="اكتب اسم المدينة أو المركز"
+                />
+              </div>
+            )}
 
             {shippingCost > 0 && (
               <div className="flex justify-between bg-blue-50 text-blue-700 p-3 rounded-md items-center mt-2">

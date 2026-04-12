@@ -36,8 +36,7 @@ export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap, 
     ? shippingCostProp
     : Math.max(0, (order.total_price || 0) - tieredTotal);
 
-  // Detect if order was updated after creation
-  const wasUpdated = order.updated_at && order.created_at && order.updated_at !== order.created_at;
+
 
   return (
     <div ref={ref} className="print-only-container hidden bg-white text-black print:block p-8" dir="rtl">
@@ -47,11 +46,6 @@ export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap, 
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">FRIENDS WEAR</h1>
           <p className="text-sm text-gray-600">فاتورة طلب / Order Invoice</p>
           <p className="text-sm text-gray-800 mt-2 font-semibold">تاريخ الطلب: {formatDate.format(new Date(order.created_at))}</p>
-          {wasUpdated && (
-            <p className="text-xs text-orange-600 font-bold mt-1 border border-orange-400 rounded px-2 py-0.5 inline-block">
-              ⚠️ تم تعديل الطلب #{order.invoice} — آخر تحديث: {formatDate.format(new Date(order.updated_at))}
-            </p>
-          )}
         </div>
         <div className="text-left">
           <p className="font-bold text-gray-600 mb-1">رقم الفاتورة</p>
