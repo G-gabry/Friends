@@ -399,8 +399,28 @@ export default function NewOrder() {
                         </div>
                       </div>
 
-                      {/* Pieces Selection */}
-                      <div className="flex flex-col gap-2 mt-2 pt-2 border-t">
+                      {/* Quantity Control - shown FIRST */}
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
+                        <span className="text-xs font-bold text-muted-foreground pl-1">
+                          الكمية
+                        </span>
+                        <ButtonGroup aria-label="Quantity" className="h-7 w-26 bg-muted/20">
+                          <Button variant="outline" size="icon" className="h-7 w-8" disabled={item.pieces?.length <= 1} onClick={() => decreaseCount(item.cartItemId)}>
+                            <MinusIcon className="w-3 h-3" />
+                          </Button>
+                          <div className="flex-1 flex items-center justify-center font-bold text-sm min-w-8">{item.pieces?.length || 0}</div>
+                          <Button
+                            variant="outline" size="icon" className="h-7 w-8 inline-flex"
+                            disabled={item.pieces?.length >= item.variants.reduce((acc, v) => acc + v.stock_quantity, 0)}
+                            onClick={() => increaseCount(item.cartItemId)}
+                          >
+                            <PlusIcon className="w-3 h-3" />
+                          </Button>
+                        </ButtonGroup>
+                      </div>
+
+                      {/* Piece Rows - one per unit */}
+                      <div className="flex flex-col gap-2 mt-1">
                         {item.pieces.map((piece, idx) => {
                           const availableColors = Array.from(new Set(item.variants.map(v => v.color).filter(Boolean)));
                           const availableSizes = Array.from(new Set(
@@ -440,33 +460,13 @@ export default function NewOrder() {
                               )}
 
                               {!piece.variant_id ? (
-                                <AlertCircle className="w-4 h-4 text-amber-500" title="اختر الخيارات" />
+                                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" title="اختر الخيارات" />
                               ) : (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                               )}
                             </div>
                           );
                         })}
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
-                        <span className="text-xs font-bold text-muted-foreground pl-1">
-                          إجمالي العدد
-                        </span>
-
-                        <ButtonGroup aria-label="Quantity" className="h-7 w-26 bg-muted/20">
-                          <Button variant="outline" size="icon" className="h-7 w-8" disabled={item.pieces?.length <= 1} onClick={() => decreaseCount(item.cartItemId)}>
-                            <MinusIcon className="w-3 h-3" />
-                          </Button>
-                          <div className="flex-1 flex items-center justify-center font-bold text-sm min-w-8">{item.pieces?.length || 0}</div>
-                          <Button
-                            variant="outline" size="icon" className="h-7 w-8 inline-flex"
-                            disabled={item.pieces?.length >= item.variants.reduce((acc, v) => acc + v.stock_quantity, 0)}
-                            onClick={() => increaseCount(item.cartItemId)}
-                          >
-                            <PlusIcon className="w-3 h-3" />
-                          </Button>
-                        </ButtonGroup>
                       </div>
 
                       <button
