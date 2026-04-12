@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { Trash2, ShoppingCart, User, MapPin, Truck } from "lucide-react";
 
-import { useShippingRates } from "@/hooks/useShippingRatesQuery";
+import { SHIPPING_RATES } from "@/lib/shippingRates";
 import { useOrdersItems } from "@/hooks/useOrdersQuery";
 import { useProducts } from "@/hooks/useProductsQuery";
 import { supabase } from "@/lib/supabase";
@@ -41,7 +41,6 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
 
   const { data: allItems = [] } = useOrdersItems();
   const { data: products = [] } = useProducts();
-  const { data: rawShippingRates = [] } = useShippingRates();
 
   const [editItems, setEditItems] = useState([]);
 
@@ -81,35 +80,29 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
       const orderSpecificItems = allItems.filter(i => i.order_id === order.id);
       setEditItems(orderSpecificItems.map(item => ({ ...item })));
     }
-  }, [isOpen, order, allItems, rawShippingRates]);
+  }, [isOpen, order, allItems]);
 
   // Shipping Calculation
   const governorates = useMemo(() => {
-    const set = new Set(rawShippingRates.map((r) => r.governorate));
-    set.add("أخرى");
-    return Array.from(set).sort();
-  }, [rawShippingRates]);
+    const names = SHIPPING_RATES.map((r) => r.governorate);
+    return [...names, "أخرى"];
+  }, []);
 
   const availableCities = useMemo(() => {
-    if (selectedGovernorate === "أخرى") return [{ governorate: "أخرى", city: "أخرى", price: 85 }];
-    return rawShippingRates.filter((r) => r.governorate === selectedGovernorate);
-  }, [selectedGovernorate, rawShippingRates]);
-
-  // Auto-select city when only one option available (e.g. "أخرى" governorate)
-  useEffect(() => {
-    if (availableCities.length === 1 && selectedCity !== availableCities[0].city) {
-      setSelectedCity(availableCities[0].city);
-    }
-  }, [availableCities, selectedCity]);
+    if (!selectedGovernorate || selectedGovernorate === "أخرى") return [];
+    const gov = SHIPPING_RATES.find((r) => r.governorate === selectedGovernorate);
+    return gov ? gov.cities : [];
+  }, [selectedGovernorate]);
 
   const shippingCost = useMemo(() => {
-    if (!selectedGovernorate || !selectedCity) return 0;
+    if (!selectedGovernorate) return 0;
     if (selectedGovernorate === "أخرى") return 85;
-    const rate = rawShippingRates.find(
-      (r) => r.governorate === selectedGovernorate && r.city === selectedCity
-    );
-    return Number(rate?.price || 85);
-  }, [selectedGovernorate, selectedCity, rawShippingRates]);
+    const gov = SHIPPING_RATES.find((r) => r.governorate === selectedGovernorate);
+    if (!gov) return 85;
+    if (!selectedCity || selectedCity === "أخرى") return gov.cities[0]?.price || 85;
+    const cityObj = gov.cities.find((c) => c.city === selectedCity);
+    return Number(cityObj?.price || 85);
+  }, [selectedGovernorate, selectedCity]);
 
   // Total pieces count
   const totalPieces = useMemo(() => {
