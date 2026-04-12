@@ -91,7 +91,7 @@ export default function NewOrder() {
     clearCart
   } = Cart();
 
-  // Group products by name
+  // Group products by name + color (so each color/photo appears as its own card)
   const groupedProducts = useMemo(() => {
     const filtered = activeCategoryId === "all"
       ? products
@@ -99,10 +99,12 @@ export default function NewOrder() {
 
     const map = new Map();
     filtered.forEach(p => {
-      if (!map.has(p.name)) {
-        map.set(p.name, { ...p, variants: [] });
+      // Use name+color as key so each unique color gets its own card
+      const key = p.color ? `${p.name}__${p.color}` : p.name;
+      if (!map.has(key)) {
+        map.set(key, { ...p, variants: [] });
       }
-      map.get(p.name).variants.push(p);
+      map.get(key).variants.push(p);
     });
     return Array.from(map.values());
   }, [products, activeCategoryId]);
