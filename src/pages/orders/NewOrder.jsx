@@ -91,6 +91,16 @@ export default function NewOrder() {
     clearCart
   } = Cart();
 
+  // allVariantsByName: maps product name → ALL variants across all colors
+  const allVariantsByName = useMemo(() => {
+    const map = new Map();
+    products.forEach(p => {
+      if (!map.has(p.name)) map.set(p.name, []);
+      map.get(p.name).push(p);
+    });
+    return map;
+  }, [products]);
+
   // Group products by name + color (so each color/photo appears as its own card)
   const groupedProducts = useMemo(() => {
     const filtered = activeCategoryId === "all"
@@ -99,7 +109,6 @@ export default function NewOrder() {
 
     const map = new Map();
     filtered.forEach(p => {
-      // Use name+color as key so each unique color gets its own card
       const key = p.color ? `${p.name}__${p.color}` : p.name;
       if (!map.has(key)) {
         map.set(key, { ...p, variants: [] });
@@ -253,10 +262,12 @@ export default function NewOrder() {
                       return (
                         <Card
                           className={`relative flex flex-col shadow-sm pt-0 overflow-hidden transition-all group cursor-pointer border-border/60 ${compoundStock > 0 ? 'hover:border-primary/50 hover:shadow-md' : 'opacity-70'}`}
-                          key={group.name}
+                          key={`${group.name}_${group.color}`}
                           onClick={() => {
                             if (compoundStock > 0) {
-                              addGroupToCart(group);
+                              // Pass ALL variants of this product name so user can select any of 16 options per piece
+                              const allVariants = allVariantsByName.get(group.name) || group.variants;
+                              addGroupToCart({ ...group, variants: allVariants });
                               setOpenCart(true);
                             }
                           }}
