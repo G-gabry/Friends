@@ -64,12 +64,12 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
       }
 
       // Attempt safe assignment if it exists in our rates:
-      let matchedGov = rawShippingRates.find(r => r.governorate === gov);
+      let matchedGov = SHIPPING_RATES.find(r => r.governorate === gov);
       let finalGov = matchedGov ? gov : (gov ? "أخرى" : "");
       setSelectedGovernorate(finalGov);
       if (finalGov === "أخرى" && gov && gov !== "أخرى") setCustomGovernorate(gov);
 
-      let matchedCity = rawShippingRates.find(r => r.city === city && r.governorate === finalGov);
+      let matchedCity = matchedGov ? matchedGov.cities.find(c => c.city === city) : null;
       const finalCity = matchedCity ? city : (city ? "أخرى" : "");
       setSelectedCity(finalCity);
       if (finalCity === "أخرى" && city && city !== "أخرى") setCustomCity(city);
