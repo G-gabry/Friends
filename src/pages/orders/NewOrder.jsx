@@ -57,178 +57,178 @@ const statusConfig = {
 
 // Internal Component to Handle Pending Inline Variant Selection
 const PendingVariantSelector = ({ item, onResolve, onRemove }) => {
-   const [selectedColor, setSelectedColor] = useState("");
-   const [selectedSize, setSelectedSize] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
 
-   const availableColors = useMemo(() => {
-      const colors = item.variants.map(v => v.color).filter(Boolean);
-      return Array.from(new Set(colors));
-   }, [item]);
+  const availableColors = useMemo(() => {
+    const colors = item.variants.map(v => v.color).filter(Boolean);
+    return Array.from(new Set(colors));
+  }, [item]);
 
-   // Auto-select if there's exactly 1 color
-   React.useEffect(() => {
-      if (availableColors.length === 1 && !selectedColor) {
-         setSelectedColor(availableColors[0]);
-      }
-   }, [availableColors, selectedColor]);
+  // Auto-select if there's exactly 1 color
+  React.useEffect(() => {
+    if (availableColors.length === 1 && !selectedColor) {
+      setSelectedColor(availableColors[0]);
+    }
+  }, [availableColors, selectedColor]);
 
-   const availableSizes = useMemo(() => {
-      // If there are colors but none selected yet, don't show sizes
-      if (availableColors.length > 1 && !selectedColor) return [];
-      
-      // Filter variants by the selected color (or show all if no colors exist)
-      const relevantVariants = selectedColor 
-         ? item.variants.filter(v => v.color === selectedColor)
-         : item.variants;
-      
-      const sizes = relevantVariants.map(v => v.size).filter(Boolean);
-      return Array.from(new Set(sizes));
-   }, [item, selectedColor, availableColors]);
+  const availableSizes = useMemo(() => {
+    // If there are colors but none selected yet, don't show sizes
+    if (availableColors.length > 1 && !selectedColor) return [];
 
-   // Auto-select if there's exactly 1 size
-   React.useEffect(() => {
-      if (availableSizes.length === 1 && !selectedSize) {
-         setSelectedSize(availableSizes[0]);
-      }
-   }, [availableSizes, selectedSize]);
+    // Filter variants by the selected color (or show all if no colors exist)
+    const relevantVariants = selectedColor
+      ? item.variants.filter(v => v.color === selectedColor)
+      : item.variants;
 
-   const handleResolve = () => {
-      // Find exact variant
-      let variant;
-      if (item.variants.length === 1) {
-         variant = item.variants[0];
-      } else {
-         variant = item.variants.find(v => 
-             (v.color || "") === (selectedColor || "") &&
-             (v.size || "") === (selectedSize || "")
-         );
-      }
+    const sizes = relevantVariants.map(v => v.size).filter(Boolean);
+    return Array.from(new Set(sizes));
+  }, [item, selectedColor, availableColors]);
 
-      if (!variant) {
-         toast.error("هذا الخيار غير متاح حالياً");
-         return;
-      }
-      if (variant.stock_quantity <= 0) {
-         toast.error("هذا المنتج نفذ من المخزون");
-         return;
-      }
+  // Auto-select if there's exactly 1 size
+  React.useEffect(() => {
+    if (availableSizes.length === 1 && !selectedSize) {
+      setSelectedSize(availableSizes[0]);
+    }
+  }, [availableSizes, selectedSize]);
 
-      onResolve(variant);
-   };
-
-   // Auto-resolve if only one variant exists in this group
-   React.useEffect(() => {
-      if (item.variants && item.variants.length === 1) {
-         const v = item.variants[0];
-         if (v.stock_quantity > 0) {
-             onResolve(v);
-         }
-      }
-   // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, []);
-
-   // Find selected variant's stock for display
-   const selectedVariant = useMemo(() => {
-      if (!selectedSize && !selectedColor) return null;
-      return item.variants.find(v => 
-         (v.color || "") === (selectedColor || "") &&
-         (v.size || "") === (selectedSize || "")
+  const handleResolve = () => {
+    // Find exact variant
+    let variant;
+    if (item.variants.length === 1) {
+      variant = item.variants[0];
+    } else {
+      variant = item.variants.find(v =>
+        (v.color || "") === (selectedColor || "") &&
+        (v.size || "") === (selectedSize || "")
       );
-   }, [item, selectedColor, selectedSize]);
+    }
 
-   return (
-       <div className="flex flex-col gap-2 bg-slate-50 border-2 border-primary/40 rounded-lg p-3 relative shadow-inner animate-in fade-in zoom-in-95 duration-200">
-           <div className="flex gap-3">
-               <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded bg-white object-cover border" />
-               <div className="flex-1">
-                  <h4 className="text-sm font-bold line-clamp-1 pr-6 flex items-center gap-1.5 text-primary">
-                     <AlertCircle className="w-4 h-4"/> تحديد الخيارات
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.name}</p>
-               </div>
-           </div>
+    if (!variant) {
+      toast.error("هذا الخيار غير متاح حالياً");
+      return;
+    }
+    if (variant.stock_quantity <= 0) {
+      toast.error("هذا المنتج نفذ من المخزون");
+      return;
+    }
 
-           <div className="space-y-3 pt-2 mt-1 border-t border-dashed">
-               {availableColors.length > 1 && (
-                   <div className="flex flex-col gap-1.5">
-                      <Label className="text-xs font-bold text-slate-500">اللون:</Label>
-                      <Select value={selectedColor} onValueChange={(val) => { setSelectedColor(val); setSelectedSize(""); }}>
-                        <SelectTrigger className="h-8 text-xs bg-white">
-                          <SelectValue placeholder="اختر اللون" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableColors.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                   </div>
-               )}
+    onResolve(variant);
+  };
 
-               {availableColors.length === 1 && (
-                   <div className="flex items-center gap-2 text-xs">
-                      <Palette className="w-3.5 h-3.5 text-muted-foreground"/>
-                      <span className="font-bold text-slate-500">اللون:</span>
-                      <Badge variant="secondary" className="text-xs">{availableColors[0]}</Badge>
-                   </div>
-               )}
+  // Auto-resolve if only one variant exists in this group
+  React.useEffect(() => {
+    if (item.variants && item.variants.length === 1) {
+      const v = item.variants[0];
+      if (v.stock_quantity > 0) {
+        onResolve(v);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-               {availableSizes.length > 1 && (
-                   <div className="flex flex-col gap-1.5 animate-in slide-in-from-top-2">
-                      <Label className="text-xs font-bold text-slate-500">المقاس:</Label>
-                      <Select value={selectedSize} onValueChange={setSelectedSize}>
-                        <SelectTrigger className="h-8 text-xs bg-white">
-                          <SelectValue placeholder="اختر المقاس" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableSizes.map(s => {
-                             const v = item.variants.find(v => v.size === s && (!selectedColor || v.color === selectedColor));
-                             const stock = v ? v.stock_quantity : 0;
-                             return (
-                                <SelectItem key={s} value={s} disabled={stock === 0}>
-                                   {s} {stock === 0 ? "(نفذ)" : `(${stock})`}
-                                </SelectItem>
-                             );
-                          })}
-                        </SelectContent>
-                      </Select>
-                   </div>
-               )}
+  // Find selected variant's stock for display
+  const selectedVariant = useMemo(() => {
+    if (!selectedSize && !selectedColor) return null;
+    return item.variants.find(v =>
+      (v.color || "") === (selectedColor || "") &&
+      (v.size || "") === (selectedSize || "")
+    );
+  }, [item, selectedColor, selectedSize]);
 
-               {availableSizes.length === 1 && (
-                   <div className="flex items-center gap-2 text-xs">
-                      <Ruler className="w-3.5 h-3.5 text-muted-foreground"/>
-                      <span className="font-bold text-slate-500">المقاس:</span>
-                      <Badge variant="secondary" className="text-xs">{availableSizes[0]}</Badge>
-                   </div>
-               )}
+  return (
+    <div className="flex flex-col gap-2 bg-slate-50 border-2 border-primary/40 rounded-lg p-3 relative shadow-inner animate-in fade-in zoom-in-95 duration-200">
+      <div className="flex gap-3">
+        <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded bg-white object-cover border" />
+        <div className="flex-1">
+          <h4 className="text-sm font-bold line-clamp-1 pr-6 flex items-center gap-1.5 text-primary">
+            <AlertCircle className="w-4 h-4" /> تحديد الخيارات
+          </h4>
+          <p className="text-xs text-muted-foreground mt-0.5">{item.name}</p>
+        </div>
+      </div>
 
-               {selectedVariant && (
-                   <div className="flex items-center gap-2 text-xs text-emerald-600 font-semibold">
-                      <CheckCircle2 className="w-3.5 h-3.5"/> المتوفر: {selectedVariant.stock_quantity}
-                   </div>
-               )}
+      <div className="space-y-3 pt-2 mt-1 border-t border-dashed">
+        {availableColors.length > 1 && (
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-bold text-slate-500">اللون:</Label>
+            <Select value={selectedColor} onValueChange={(val) => { setSelectedColor(val); setSelectedSize(""); }}>
+              <SelectTrigger className="h-8 text-xs bg-white">
+                <SelectValue placeholder="اختر اللون" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableColors.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-               <Button 
-                  size="sm" 
-                  className="w-full mt-2 h-8 font-bold gap-1 shadow-md shadow-primary/20"
-                  onClick={handleResolve}
-                  disabled={
-                     (availableColors.length > 0 && !selectedColor) || 
-                     (availableSizes.length > 0 && !selectedSize) ||
-                     (selectedVariant && selectedVariant.stock_quantity === 0)
-                  }
-               >
-                  <CheckCircle2 className="w-4 h-4"/> تأكيد الإضافة
-               </Button>
-           </div>
+        {availableColors.length === 1 && (
+          <div className="flex items-center gap-2 text-xs">
+            <Palette className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="font-bold text-slate-500">اللون:</span>
+            <Badge variant="secondary" className="text-xs">{availableColors[0]}</Badge>
+          </div>
+        )}
 
-           <button
-              className="absolute top-2 right-2 text-muted-foreground hover:text-rose-500 opacity-80"
-              onClick={onRemove}
-           >
-              <CircleX size={18} fill="currentColor" className="text-white bg-foreground rounded-full"/>
-           </button>
-       </div>
-   );
+        {availableSizes.length > 1 && (
+          <div className="flex flex-col gap-1.5 animate-in slide-in-from-top-2">
+            <Label className="text-xs font-bold text-slate-500">المقاس:</Label>
+            <Select value={selectedSize} onValueChange={setSelectedSize}>
+              <SelectTrigger className="h-8 text-xs bg-white">
+                <SelectValue placeholder="اختر المقاس" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSizes.map(s => {
+                  const v = item.variants.find(v => v.size === s && (!selectedColor || v.color === selectedColor));
+                  const stock = v ? v.stock_quantity : 0;
+                  return (
+                    <SelectItem key={s} value={s} disabled={stock === 0}>
+                      {s} {stock === 0 ? "(نفذ)" : `(${stock})`}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {availableSizes.length === 1 && (
+          <div className="flex items-center gap-2 text-xs">
+            <Ruler className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="font-bold text-slate-500">المقاس:</span>
+            <Badge variant="secondary" className="text-xs">{availableSizes[0]}</Badge>
+          </div>
+        )}
+
+        {selectedVariant && (
+          <div className="flex items-center gap-2 text-xs text-emerald-600 font-semibold">
+            <CheckCircle2 className="w-3.5 h-3.5" /> المتوفر: {selectedVariant.stock_quantity}
+          </div>
+        )}
+
+        <Button
+          size="sm"
+          className="w-full mt-2 h-8 font-bold gap-1 shadow-md shadow-primary/20"
+          onClick={handleResolve}
+          disabled={
+            (availableColors.length > 0 && !selectedColor) ||
+            (availableSizes.length > 0 && !selectedSize) ||
+            (selectedVariant && selectedVariant.stock_quantity === 0)
+          }
+        >
+          <CheckCircle2 className="w-4 h-4" /> تأكيد الإضافة
+        </Button>
+      </div>
+
+      <button
+        className="absolute top-2 right-2 text-muted-foreground hover:text-rose-500 opacity-80"
+        onClick={onRemove}
+      >
+        <CircleX size={18} fill="currentColor" className="text-white bg-foreground rounded-full" />
+      </button>
+    </div>
+  );
 };
 
 export default function NewOrder() {
@@ -244,6 +244,8 @@ export default function NewOrder() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [selectedGovernorate, setSelectedGovernorate] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
+  const [customGovernorate, setCustomGovernorate] = useState("");
+  const [customCity, setCustomCity] = useState("");
 
   const { data: products = [] } = useProducts();
   const { data: categories = [] } = useCategories();
@@ -267,13 +269,13 @@ export default function NewOrder() {
     const filtered = activeCategoryId === "all"
       ? products
       : products.filter((p) => p.category_id === activeCategoryId);
-      
+
     const map = new Map();
     filtered.forEach(p => {
-       if(!map.has(p.name)) {
-          map.set(p.name, { ...p, variants: [] });
-       }
-       map.get(p.name).variants.push(p);
+      if (!map.has(p.name)) {
+        map.set(p.name, { ...p, variants: [] });
+      }
+      map.get(p.name).variants.push(p);
     });
     return Array.from(map.values());
   }, [products, activeCategoryId]);
@@ -351,8 +353,8 @@ export default function NewOrder() {
         customer_phone: customerPhone.trim(),
         customer_address: [
           customerAddress,
-          selectedCity,
-          selectedGovernorate,
+          selectedCity === "أخرى" ? customCity : selectedCity,
+          selectedGovernorate === "أخرى" ? customGovernorate : selectedGovernorate,
         ]
           .filter(Boolean)
           .join(", "),
@@ -369,6 +371,8 @@ export default function NewOrder() {
       setCustomerAddress("");
       setSelectedGovernorate("");
       setSelectedCity("");
+      setCustomGovernorate("");
+      setCustomCity("");
       queryClient.invalidateQueries(["products"]);
       queryClient.invalidateQueries(["orders"]);
       openCart && setOpenCart(false);
@@ -430,41 +434,40 @@ export default function NewOrder() {
                           className={`relative flex flex-col shadow-sm pt-0 overflow-hidden transition-all group cursor-pointer border-border/60 ${compoundStock > 0 ? 'hover:border-primary/50 hover:shadow-md' : 'opacity-70'}`}
                           key={group.name}
                           onClick={() => {
-                             if (compoundStock > 0) {
-                                addPendingGroup(group);
-                                setOpenCart(true);
-                             }
+                            if (compoundStock > 0) {
+                              addPendingGroup(group);
+                              setOpenCart(true);
+                            }
                           }}
                         >
                           <div className="relative aspect-square overflow-hidden bg-slate-100">
-                             <img
-                               src={group.image_url}
-                               alt={group.name}
-                               loading="lazy"
-                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                             />
-                              <Badge
-                                variant="secondary"
-                                className={`absolute top-2 right-2 z-10 font-bold backdrop-blur-md shadow-sm border-0
-                                        ${
-                                          compoundStock == 0
-                                            ? "bg-slate-800/80 text-white"
-                                            : compoundStock > 10
-                                              ? "bg-emerald-500/90 text-white"
-                                              : "bg-amber-500/90 text-white"
-                                        }
+                            <img
+                              src={group.image_url}
+                              alt={group.name}
+                              loading="lazy"
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <Badge
+                              variant="secondary"
+                              className={`absolute top-2 right-2 z-10 font-bold backdrop-blur-md shadow-sm border-0
+                                        ${compoundStock == 0
+                                  ? "bg-slate-800/80 text-white"
+                                  : compoundStock > 10
+                                    ? "bg-emerald-500/90 text-white"
+                                    : "bg-amber-500/90 text-white"
+                                }
                                 `}
-                              >
-                                {t("product.stock")}: {compoundStock}
-                              </Badge>
+                            >
+                              {t("product.stock")}: {compoundStock}
+                            </Badge>
 
-                              {group.variants.length > 1 && (
-                                <Badge className="absolute bottom-2 right-2 z-10 font-bold bg-black/60 hover:bg-black/80 backdrop-blur-sm border-0 text-white">
-                                  {group.variants.length} خيارات
-                                </Badge>
-                              )}
+                            {group.variants.length > 1 && (
+                              <Badge className="absolute bottom-2 right-2 z-10 font-bold bg-black/60 hover:bg-black/80 backdrop-blur-sm border-0 text-white">
+                                {group.variants.length} خيارات
+                              </Badge>
+                            )}
                           </div>
-                          
+
                           <CardHeader className="p-3 pb-0 flex-1">
                             <CardTitle className="text-base font-bold line-clamp-2 leading-tight">
                               {group.name}
@@ -518,18 +521,18 @@ export default function NewOrder() {
         >
           {/* MAIN SIDEBAR */}
           <div className="p-4 border-b bg-muted/20 rounded-t-xl shrink-0 flex justify-between items-center">
-             <div>
-                <h1 className="font-black text-xl flex items-center gap-2"><ShoppingCart className="w-5 h-5 text-primary"/> {t("new_order.order_summary")}</h1>
-                <p className="text-sm text-muted-foreground font-semibold mt-0.5">
-                  {t("new_order.products")}: <span className="text-foreground">{countOfItems}</span>
-                </p>
-             </div>
-             
-             <DropdownMenu>
+            <div>
+              <h1 className="font-black text-xl flex items-center gap-2"><ShoppingCart className="w-5 h-5 text-primary" /> {t("new_order.order_summary")}</h1>
+              <p className="text-sm text-muted-foreground font-semibold mt-0.5">
+                {t("new_order.products")}: <span className="text-foreground">{countOfItems}</span>
+              </p>
+            </div>
+
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-8 gap-2">
                   <Badge className={`capitalize h-5 rounded-sm ${statusConfig[status] || statusConfig.default}`}>
-                     {status}
+                    {status}
                   </Badge>
                   <ChevronDownIcon className="w-4 h-4 text-muted-foreground" />
                 </Button>
@@ -537,13 +540,13 @@ export default function NewOrder() {
               <DropdownMenuContent align="end" className="w-40 font-semibold">
                 <DropdownMenuGroup>
                   <DropdownMenuItem onClick={() => setStatus("pending")}>
-                    <div className="flex items-center gap-2 text-amber-700 w-full"><div className="w-2 h-2 rounded-full bg-amber-500"/>Pending</div>
+                    <div className="flex items-center gap-2 text-amber-700 w-full"><div className="w-2 h-2 rounded-full bg-amber-500" />Pending</div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setStatus("shipped")}>
-                    <div className="flex items-center gap-2 text-blue-700 w-full"><div className="w-2 h-2 rounded-full bg-blue-500"/>Shipped</div>
+                    <div className="flex items-center gap-2 text-blue-700 w-full"><div className="w-2 h-2 rounded-full bg-blue-500" />Shipped</div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setStatus("delivered")}>
-                     <div className="flex items-center gap-2 text-emerald-700 w-full"><div className="w-2 h-2 rounded-full bg-emerald-500"/>Delivered</div>
+                    <div className="flex items-center gap-2 text-emerald-700 w-full"><div className="w-2 h-2 rounded-full bg-emerald-500" />Delivered</div>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
@@ -554,68 +557,68 @@ export default function NewOrder() {
             {/* Cart Items Area */}
             <div className="p-3 space-y-3">
               {cartItems.length === 0 ? (
-                 <div className="text-center py-8 opacity-50">
-                    <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-muted-foreground"/>
-                    <p>السلة فارغة. قم بإضافة منتجات.</p>
-                 </div>
+                <div className="text-center py-8 opacity-50">
+                  <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                  <p>السلة فارغة. قم بإضافة منتجات.</p>
+                </div>
               ) : (
                 cartItems.map((item) => (
                   <div key={item.cartItemId}>
-                      {item.isPending ? (
-                          <PendingVariantSelector 
-                             item={item} 
-                             onResolve={(variant) => resolvePendingGroup(item.cartItemId, variant)}
-                             onRemove={() => removeFromCart(item.cartItemId)}
+                    {item.isPending ? (
+                      <PendingVariantSelector
+                        item={item}
+                        onResolve={(variant) => resolvePendingGroup(item.cartItemId, variant)}
+                        onRemove={() => removeFromCart(item.cartItemId)}
+                      />
+                    ) : (
+                      <div className="flex flex-col gap-2 bg-white rounded-lg border shadow-sm p-3 relative group animate-in fade-in duration-300">
+                        <div className="flex gap-3">
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            loading="lazy"
+                            className="w-16 h-16 rounded-md object-cover border shrink-0"
                           />
-                      ) : (
-                          <div className="flex flex-col gap-2 bg-white rounded-lg border shadow-sm p-3 relative group animate-in fade-in duration-300">
-                            <div className="flex gap-3">
-                                <img
-                                  src={item.image_url}
-                                  alt={item.name}
-                                  loading="lazy"
-                                  className="w-16 h-16 rounded-md object-cover border shrink-0"
-                                />
-                                <div className="flex-1">
-                                  <h4 className="text-sm font-bold line-clamp-1 pr-6">{item.name}</h4>
-                                  <div className="flex gap-2 mt-1 flex-wrap">
-                                    {(item.color && item.color !== "default") && (
-                                       <Badge variant="secondary" className="px-1.5 py-0 text-[10px]"><Palette className="w-2.5 h-2.5 mr-1"/>{item.color}</Badge>
-                                    )}
-                                    {(item.size && item.size !== "default") && (
-                                       <Badge variant="secondary" className="px-1.5 py-0 text-[10px]"><Ruler className="w-2.5 h-2.5 mr-1"/>{item.size}</Badge>
-                                    )}
-                                  </div>
-                                  <div className="font-black text-primary text-sm mt-1.5 flex justify-between items-center">
-                                    <span>{item.price * item.count} {t("new_order.egp")}</span>
-                                  </div>
-                                </div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-bold line-clamp-1 pr-6">{item.name}</h4>
+                            <div className="flex gap-2 mt-1 flex-wrap">
+                              {(item.color && item.color !== "default") && (
+                                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]"><Palette className="w-2.5 h-2.5 mr-1" />{item.color}</Badge>
+                              )}
+                              {(item.size && item.size !== "default") && (
+                                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]"><Ruler className="w-2.5 h-2.5 mr-1" />{item.size}</Badge>
+                              )}
                             </div>
-                            
-                            <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
-                              <span className="text-xs font-bold text-muted-foreground pl-1">
-                                الكمية
-                              </span>
-
-                              <ButtonGroup aria-label="Quantity" className="h-7 w-26 bg-muted/20">
-                                <Button variant="outline" size="icon" className="h-7 w-8" onClick={() => decreaseCount(item.cartItemId)}>
-                                  <MinusIcon className="w-3 h-3"/>
-                                </Button>
-                                <div className="flex-1 flex items-center justify-center font-bold text-sm min-w-8">{item.count || 1}</div>
-                                <Button variant="outline" size="icon" className="h-7 w-8 inline-flex" disabled={item.stock_quantity === item.count} onClick={() => increaseCount(item.cartItemId, item.stock_quantity)}>
-                                  <PlusIcon className="w-3 h-3"/>
-                                </Button>
-                              </ButtonGroup>
+                            <div className="font-black text-primary text-sm mt-1.5 flex justify-between items-center">
+                              <span>{item.price * item.count} {t("new_order.egp")}</span>
                             </div>
-
-                            <button
-                              className="absolute top-2 right-2 text-muted-foreground hover:text-rose-500 transition-colors opacity-80 hover:opacity-100 bg-white p-1 rounded-full"
-                              onClick={() => removeFromCart(item.cartItemId)}
-                            >
-                              <CircleX size={18} fill="currentColor" className="text-white bg-foreground rounded-full"/>
-                            </button>
                           </div>
-                      )}
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
+                          <span className="text-xs font-bold text-muted-foreground pl-1">
+                            الكمية
+                          </span>
+
+                          <ButtonGroup aria-label="Quantity" className="h-7 w-26 bg-muted/20">
+                            <Button variant="outline" size="icon" className="h-7 w-8" onClick={() => decreaseCount(item.cartItemId)}>
+                              <MinusIcon className="w-3 h-3" />
+                            </Button>
+                            <div className="flex-1 flex items-center justify-center font-bold text-sm min-w-8">{item.count || 1}</div>
+                            <Button variant="outline" size="icon" className="h-7 w-8 inline-flex" disabled={item.stock_quantity === item.count} onClick={() => increaseCount(item.cartItemId, item.stock_quantity)}>
+                              <PlusIcon className="w-3 h-3" />
+                            </Button>
+                          </ButtonGroup>
+                        </div>
+
+                        <button
+                          className="absolute top-2 right-2 text-muted-foreground hover:text-rose-500 transition-colors opacity-80 hover:opacity-100 bg-white p-1 rounded-full"
+                          onClick={() => removeFromCart(item.cartItemId)}
+                        >
+                          <CircleX size={18} fill="currentColor" className="text-white bg-foreground rounded-full" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -628,7 +631,7 @@ export default function NewOrder() {
               <h3 className="text-sm font-black text-slate-800 flex items-center gap-1.5 uppercase tracking-tight">
                 <User className="w-4 h-4 text-primary" /> {t("new_order.customer_info")}
               </h3>
-              
+
               <div className="space-y-2.5">
                 <div>
                   <Input
@@ -655,7 +658,7 @@ export default function NewOrder() {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Select value={selectedGovernorate} onValueChange={(val) => { setSelectedGovernorate(val); setSelectedCity(""); }}>
+                  <Select value={selectedGovernorate} onValueChange={(val) => { setSelectedGovernorate(val); setSelectedCity(""); setCustomGovernorate(""); setCustomCity(""); }}>
                     <SelectTrigger className="h-10 text-sm flex-1 font-semibold rounded-lg bg-slate-50">
                       <SelectValue placeholder={t("new_order.governorate")} />
                     </SelectTrigger>
@@ -663,59 +666,77 @@ export default function NewOrder() {
                       {governorates.map((gov) => (<SelectItem key={gov} value={gov} className="font-semibold">{gov}</SelectItem>))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedGovernorate}>
-                    <SelectTrigger className="h-10 text-sm flex-1 font-semibold rounded-lg bg-slate-50">
-                      <SelectValue placeholder={t("new_order.city")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableCities.map((c) => (
-                        <SelectItem key={c.city} value={c.city} className="font-semibold">{c.city} - {c.price}EGP</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {selectedGovernorate !== "أخرى" && (
+                    <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedGovernorate}>
+                      <SelectTrigger className="h-10 text-sm flex-1 font-semibold rounded-lg bg-slate-50">
+                        <SelectValue placeholder={t("new_order.city")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableCities.map((c) => (
+                          <SelectItem key={c.city} value={c.city} className="font-semibold">{c.city} - {c.price}EGP</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
+                {selectedGovernorate === "أخرى" && (
+                  <Input
+                    value={customGovernorate}
+                    onChange={(e) => setCustomGovernorate(e.target.value)}
+                    placeholder="اكتب اسم المحافظة / المنطقة"
+                    className="h-10 text-sm font-semibold rounded-lg bg-slate-50"
+                  />
+                )}
+                {selectedCity === "أخرى" && selectedGovernorate !== "أخرى" && (
+                  <Input
+                    value={customCity}
+                    onChange={(e) => setCustomCity(e.target.value)}
+                    placeholder="اكتب اسم المدينة"
+                    className="h-10 text-sm font-semibold rounded-lg bg-slate-50"
+                  />
+                )}
               </div>
             </div>
           </div>
 
           <div className="bg-card shrink-0 p-4 border-t rounded-b-xl shadow-[0_-10px_20px_rgba(0,0,0,0.02)] z-10 space-y-3">
-             <div className="space-y-1.5 pt-1">
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between text-sm font-semibold text-muted-foreground">
+                <span>سعر القطع ({countOfItems} قطعة)</span>
+                <span>{tieredTotal} {t("new_order.egp")}</span>
+              </div>
+              {countOfItems >= 2 && (
+                <div className="flex justify-between text-xs text-emerald-600 font-bold">
+                  <span>🎉 خصم الكمية مُطبّق</span>
+                  <span>وفرت {(countOfItems * 500) - tieredTotal} {t("new_order.egp")}</span>
+                </div>
+              )}
+              {shippingCost > 0 && (
                 <div className="flex justify-between text-sm font-semibold text-muted-foreground">
-                  <span>سعر القطع ({countOfItems} قطعة)</span>
-                  <span>{tieredTotal} {t("new_order.egp")}</span>
+                  <span className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> تكلفة الشحن</span>
+                  <span className="text-emerald-600">+{shippingCost} {t("new_order.egp")}</span>
                 </div>
-                {countOfItems >= 2 && (
-                  <div className="flex justify-between text-xs text-emerald-600 font-bold">
-                    <span>🎉 خصم الكمية مُطبّق</span>
-                    <span>وفرت {(countOfItems * 500) - tieredTotal} {t("new_order.egp")}</span>
-                  </div>
-                )}
-                {shippingCost > 0 && (
-                  <div className="flex justify-between text-sm font-semibold text-muted-foreground">
-                    <span className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5"/> تكلفة الشحن</span>
-                    <span className="text-emerald-600">+{shippingCost} {t("new_order.egp")}</span>
-                  </div>
-                )}
-                <Separator className="my-2"/>
-                <div className="flex justify-between text-xl font-black pt-1 items-end">
-                  <span>الإجمالي النهائي</span>
-                  <span className="text-primary text-2xl tracking-tighter">{grandTotal.toLocaleString()} <span className="text-sm font-bold text-muted-foreground -ml-1">EGP</span></span>
-                </div>
-             </div>
+              )}
+              <Separator className="my-2" />
+              <div className="flex justify-between text-xl font-black pt-1 items-end">
+                <span>الإجمالي النهائي</span>
+                <span className="text-primary text-2xl tracking-tighter">{grandTotal.toLocaleString()} <span className="text-sm font-bold text-muted-foreground -ml-1">EGP</span></span>
+              </div>
+            </div>
 
-              <Button
-                disabled={isSubmitting || cartItems.length === 0 || hasPendingItems}
-                className="w-full text-lg shadow-xl shadow-primary/20 hover:shadow-primary/40 font-black h-12 rounded-xl transition-all disabled:opacity-50"
-                onClick={() => handleOrder(status)}
-              >
-                {isSubmitting ? (
-                  <><Spinner className="mr-2" /> إتمام الطلب...</>
-                ) : hasPendingItems ? (
-                  <>أكمل خيارات المنتجات</>
-                ) : (
-                  <>تأكيد وحفظ الطلب</>
-                )}
-              </Button>
+            <Button
+              disabled={isSubmitting || cartItems.length === 0 || hasPendingItems}
+              className="w-full text-lg shadow-xl shadow-primary/20 hover:shadow-primary/40 font-black h-12 rounded-xl transition-all disabled:opacity-50"
+              onClick={() => handleOrder(status)}
+            >
+              {isSubmitting ? (
+                <><Spinner className="mr-2" /> إتمام الطلب...</>
+              ) : hasPendingItems ? (
+                <>أكمل خيارات المنتجات</>
+              ) : (
+                <>تأكيد وحفظ الطلب</>
+              )}
+            </Button>
           </div>
         </div>
       </div>

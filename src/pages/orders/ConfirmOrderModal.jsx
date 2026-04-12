@@ -36,6 +36,8 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
   const [customerAddress, setCustomerAddress] = useState("");
   const [selectedGovernorate, setSelectedGovernorate] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
+  const [customGovernorate, setCustomGovernorate] = useState("");
+  const [customCity, setCustomCity] = useState("");
 
   const { data: allItems = [] } = useOrdersItems();
   const { data: products = [] } = useProducts();
@@ -48,28 +50,31 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
     if (isOpen && order) {
       setCustomerName(order.customer_name || "");
       setCustomerPhone(order.customer_phone || "");
-      
+
       // Auto-extract address parts if separated by commas (simple heuristic)
       const parts = (order.customer_address || "").split(",").map((s) => s.trim());
       let addr = order.customer_address || "";
       let gov = "";
       let city = "";
-      
+
       // If we see 3 parts, attempt to reverse engineer Address, City, Gov
       if (parts.length >= 3) {
         gov = parts[parts.length - 1];
         city = parts[parts.length - 2];
         addr = parts.slice(0, parts.length - 2).join(", ");
       }
-      
+
       // Attempt safe assignment if it exists in our rates:
       let matchedGov = rawShippingRates.find(r => r.governorate === gov);
       let finalGov = matchedGov ? gov : (gov ? "أخرى" : "");
       setSelectedGovernorate(finalGov);
-      
+      if (finalGov === "أخرى" && gov && gov !== "أخرى") setCustomGovernorate(gov);
+
       let matchedCity = rawShippingRates.find(r => r.city === city && r.governorate === finalGov);
-      setSelectedCity(matchedCity ? city : (city ? "أخرى" : ""));
-      
+      const finalCity = matchedCity ? city : (city ? "أخرى" : "");
+      setSelectedCity(finalCity);
+      if (finalCity === "أخرى" && city && city !== "أخرى") setCustomCity(city);
+
       setCustomerAddress(addr);
 
       // Load Items
@@ -153,9 +158,13 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
     }
 
     setIsSubmitting(true);
-    
-    const finalAddress = [customerAddress, selectedCity, selectedGovernorate].filter(Boolean).join(", ");
-    
+
+    const finalAddress = [
+      customerAddress,
+      selectedCity === "أخرى" ? customCity : selectedCity,
+      selectedGovernorate === "أخرى" ? customGovernorate : selectedGovernorate,
+    ].filter(Boolean).join(", ");
+
     const { data, error } = await supabase.rpc("update_existing_order", {
       p_order_id: order.id,
       p_order_data: {
@@ -222,27 +231,52 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>المحافظة</Label>
-                <Select value={selectedGovernorate} onValueChange={(v) => { setSelectedGovernorate(v); setSelectedCity(""); }}>
+                <Select value={selectedGovernorate} onValueChange={(v) => { setSelectedGovernorate(v); setSelectedCity(""); setCustomGovernorate(""); setCustomCity(""); }}>
                   <SelectTrigger><SelectValue placeholder="اختر المحافظة" /></SelectTrigger>
                   <SelectContent>
                     {governorates.map((g) => (<SelectItem key={g} value={g}>{g}</SelectItem>))}
                   </SelectContent>
                 </Select>
+                {selectedGovernorate === "أخرى" && (
+                  <Input
+                    className="mt-2"
+                    value={customGovernorate}
+                    onChange={(e) => setCustomGovernorate(e.target.value)}
+                    placeholder="اكتب اسم المحافظة / المنطقة"
+                  />
+                )}
               </div>
               <div>
                 <Label>المدينة (لحساب الشحن)</Label>
-                <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedGovernorate}>
-                  <SelectTrigger><SelectValue placeholder="اختر المدينة" /></SelectTrigger>
-                  <SelectContent>
-                    {availableCities.map((c) => (<SelectItem key={c.city} value={c.city}>{c.city} - {c.price} ج.م</SelectItem>))}
-                  </SelectContent>
-                </Select>
+                {selectedGovernorate !== "أخرى" ? (
+                  <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedGovernorate}>
+                    <SelectTrigger><SelectValue placeholder="اختر المدينة" /></SelectTrigger>
+                    <SelectContent>
+                      {availableCities.map((c) => (<SelectItem key={c.city} value={c.city}>{c.city} - {c.price} ج.م</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={customCity}
+                    onChange={(e) => setCustomCity(e.target.value)}
+                    placeholder="اكتب اسم المدينة / المنطقة"
+                    className="bg-orange-50 border-orange-300"
+                  />
+                )}
+                {selectedCity === "أخرى" && selectedGovernorate !== "أخرى" && (
+                  <Input
+                    className="mt-2"
+                    value={customCity}
+                    onChange={(e) => setCustomCity(e.target.value)}
+                    placeholder="اكتب اسم المدينة"
+                  />
+                )}
               </div>
             </div>
 
             {shippingCost > 0 && (
               <div className="flex justify-between bg-blue-50 text-blue-700 p-3 rounded-md items-center mt-2">
-                <span className="flex items-center gap-2 font-bold"><Truck className="w-4 h-4"/> مصاريف الشحن التلقائية</span>
+                <span className="flex items-center gap-2 font-bold"><Truck className="w-4 h-4" /> مصاريف الشحن التلقائية</span>
                 <span className="font-black">{shippingCost} EGP</span>
               </div>
             )}
@@ -259,11 +293,11 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
                     <p className="text-xs text-muted-foreground">{item.size || '-'} / {item.color || '-'}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Input 
-                      type="number" 
-                      min="1" 
-                      className="w-16 h-8 text-center" 
-                      value={item.quantity} 
+                    <Input
+                      type="number"
+                      min="1"
+                      className="w-16 h-8 text-center"
+                      value={item.quantity}
                       onChange={(e) => handleQuantityChange(idx, e.target.value)}
                     />
                     <Button variant="ghost" size="icon" className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 h-8 w-8" onClick={() => handleRemoveItem(idx)}>
@@ -279,18 +313,18 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
             </div>
 
             <div className="border-t pt-2 space-y-1">
-               <div className="flex justify-between text-muted-foreground text-sm">
-                 <span>سعر القطع ({totalPieces} قطعة)</span>
-                 <span>{tieredTotal} EGP</span>
-               </div>
-               {discountSaved > 0 && (
-                 <div className="flex justify-between text-xs text-emerald-600 font-bold">
-                   <span>🎉 خصم الكمية مُطبّق</span>
-                   <span>وفرت {discountSaved} EGP</span>
-                 </div>
-               )}
-               <div className="flex justify-between text-muted-foreground text-sm"><span>الشحن</span><span>{shippingCost} EGP</span></div>
-               <div className="flex justify-between font-black text-xl pt-1"><span>الإجمالي النهائي</span><span className="text-primary">{grandTotal} EGP</span></div>
+              <div className="flex justify-between text-muted-foreground text-sm">
+                <span>سعر القطع ({totalPieces} قطعة)</span>
+                <span>{tieredTotal} EGP</span>
+              </div>
+              {discountSaved > 0 && (
+                <div className="flex justify-between text-xs text-emerald-600 font-bold">
+                  <span>🎉 خصم الكمية مُطبّق</span>
+                  <span>وفرت {discountSaved} EGP</span>
+                </div>
+              )}
+              <div className="flex justify-between text-muted-foreground text-sm"><span>الشحن</span><span>{shippingCost} EGP</span></div>
+              <div className="flex justify-between font-black text-xl pt-1"><span>الإجمالي النهائي</span><span className="text-primary">{grandTotal} EGP</span></div>
             </div>
           </div>
         </div>

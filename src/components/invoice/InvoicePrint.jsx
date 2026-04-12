@@ -13,9 +13,9 @@ const formatDate = new Intl.DateTimeFormat("ar-EG", {
 });
 
 // A4 Invoice Printable Component
-export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap }, ref) => {
+export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap, shippingCost: shippingCostProp }, ref) => {
   if (!order || !orderItems) return null;
-  
+
   const creator = profilesMap ? profilesMap[order.user_id] : "الموظف";
   const totalQuantity = orderItems.reduce((acc, item) => acc + (item.quantity || 0), 0);
 
@@ -31,8 +31,13 @@ export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap }
   const tieredTotal = computeTiered(totalQuantity);
   const fullPriceTotal = totalQuantity * 500; // if no discount
   const discountSaved = fullPriceTotal - tieredTotal;
-  // Shipping = stored total - tiered product total (or 0 if negative)
-  const shippingCost = Math.max(0, (order.total_price || 0) - tieredTotal);
+  // Use prop if provided (accurate), otherwise fallback to subtraction
+  const shippingCost = shippingCostProp !== undefined
+    ? shippingCostProp
+    : Math.max(0, (order.total_price || 0) - tieredTotal);
+
+  // Detect if order was updated after creation
+  const wasUpdated = order.updated_at && order.created_at && order.updated_at !== order.created_at;
 
   return (
     <div ref={ref} className="print-only-container hidden bg-white text-black print:block p-8" dir="rtl">
@@ -42,6 +47,11 @@ export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap }
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">FRIENDS WEAR</h1>
           <p className="text-sm text-gray-600">فاتورة طلب / Order Invoice</p>
           <p className="text-sm text-gray-800 mt-2 font-semibold">تاريخ الطلب: {formatDate.format(new Date(order.created_at))}</p>
+          {wasUpdated && (
+            <p className="text-xs text-orange-600 font-bold mt-1 border border-orange-400 rounded px-2 py-0.5 inline-block">
+              ⚠️ تم تعديل الطلب #{order.invoice} — آخر تحديث: {formatDate.format(new Date(order.updated_at))}
+            </p>
+          )}
         </div>
         <div className="text-left">
           <p className="font-bold text-gray-600 mb-1">رقم الفاتورة</p>
@@ -62,9 +72,9 @@ export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap }
           <p><span className="font-semibold">العنوان:</span> {order.customer_address || 'غير محدد'}</p>
         </div>
         <div className="w-1/3 border border-gray-300 p-4 rounded-md">
-           <h3 className="font-bold text-md mb-2">معلومات الشحن</h3>
-           <p className="text-sm"><span className="font-semibold">بواسطة:</span> {creator}</p>
-           <p className="text-sm mt-3"><span className="font-semibold">حالة الطلب:</span> {order.status}</p>
+          <h3 className="font-bold text-md mb-2">معلومات الشحن</h3>
+          <p className="text-sm"><span className="font-semibold">بواسطة:</span> {creator}</p>
+          <p className="text-sm mt-3"><span className="font-semibold">حالة الطلب:</span> {order.status}</p>
         </div>
       </div>
 
@@ -127,8 +137,8 @@ export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap }
             </div>
           )}
           <div className="flex justify-between py-3 text-2xl font-black bg-black text-white px-4 rounded-b-md mt-2 shadow-sm">
-             <span>الإجمالي:</span>
-             <span dir="ltr">{(order.total_price || 0).toLocaleString()} ج.م</span>
+            <span>الإجمالي:</span>
+            <span dir="ltr">{(order.total_price || 0).toLocaleString()} ج.م</span>
           </div>
         </div>
       </div>
