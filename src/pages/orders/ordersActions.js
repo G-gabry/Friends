@@ -25,7 +25,7 @@ export const handlePlaceOrder = async (
         });
 
         return Object.entries(counts).map(([varId, qty]) => {
-          const variant = group.variants.find(v => v.id === varId);
+          const variant = group.variants.find(v => String(v.id) === String(varId));
           return {
             product_id: varId,
             quantity: qty,
