@@ -141,7 +141,7 @@ export default function NewOrder() {
   }, [countOfItems]);
 
   const grandTotal = tieredTotal + shippingCost;
-  const missingVariants = cartItems.some(i => i.pieces.some(p => !p.variant_id));
+  const missingVariants = cartItems.some(i => i.pieces?.some(p => !p.variant_id));
 
   const handleOrder = async (status) => {
     if (cartItems.length < 1) {

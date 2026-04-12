@@ -4,7 +4,9 @@ export default function Cart() {
   const [cartItems, setCartItems] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("cartItemsInLS"));
-      if (Array.isArray(saved)) return saved;
+      if (Array.isArray(saved)) {
+        return saved.filter(item => Array.isArray(item.pieces));
+      }
     } catch { }
     return [];
   });
