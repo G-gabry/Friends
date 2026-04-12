@@ -12,9 +12,7 @@ export const dashboardLoader = async () => {
     return null;
   }
 
-  await queryClient.prefetchQuery(
-    dashboardQueries.stats(session.user.id, session),
-  );
+  await queryClient.prefetchQuery(dashboardQueries.stats());
 
   return null;
 };
