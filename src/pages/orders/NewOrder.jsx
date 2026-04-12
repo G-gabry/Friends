@@ -422,45 +422,45 @@ export default function NewOrder() {
                       {/* Piece Rows - one per unit */}
                       <div className="flex flex-col gap-2 mt-1">
                         {item.pieces.map((piece, idx) => {
-                          const availableColors = Array.from(new Set(item.variants.map(v => v.color).filter(Boolean)));
-                          const availableSizes = Array.from(new Set(
-                            item.variants.filter(v => !piece.color || v.color === piece.color).map(v => v.size).filter(Boolean)
-                          ));
+                          // Build the list of selectable variant options
+                          const variantOptions = item.variants
+                            .filter(v => v.stock_quantity > 0)
+                            .map(v => ({
+                              id: v.id,
+                              label: [v.color, v.size].filter(Boolean).join(" / ") || `خيار ${v.id?.slice(-4)}`,
+                              color: v.color || "",
+                              size: v.size || "",
+                            }));
+
+                          const selectedLabel = piece.variant_id
+                            ? variantOptions.find(o => o.id === piece.variant_id)?.label || "محدد"
+                            : null;
 
                           return (
                             <div key={piece.id} className="flex items-center gap-2 bg-slate-50 p-2 rounded border border-dashed">
-                              <span className="text-xs font-bold w-4">{idx + 1}.</span>
-                              {availableColors.length > 0 && (
-                                <Select
-                                  value={piece.color}
-                                  onValueChange={(val) => {
-                                    let nv = null;
-                                    if (availableSizes.length === 0 || piece.size) {
-                                      nv = item.variants.find(v => v.color === val && (!piece.size || v.size === piece.size));
-                                    }
-                                    updatePiece(item.cartItemId, piece.id, { color: val, size: "", variant_id: nv ? nv.id : null });
-                                  }}
-                                >
-                                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="اللون" /></SelectTrigger>
-                                  <SelectContent>{availableColors.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                                </Select>
-                              )}
-
-                              {availableSizes.length > 0 && (
-                                <Select
-                                  value={piece.size}
-                                  onValueChange={(val) => {
-                                    const nv = item.variants.find(v => v.size === val && (!piece.color || v.color === piece.color));
-                                    updatePiece(item.cartItemId, piece.id, { size: val, variant_id: nv ? nv.id : null });
-                                  }}
-                                >
-                                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="المقاس" /></SelectTrigger>
-                                  <SelectContent>{availableSizes.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                                </Select>
-                              )}
-
+                              <span className="text-xs font-bold text-muted-foreground w-5 shrink-0">{idx + 1}.</span>
+                              <Select
+                                value={piece.variant_id || ""}
+                                onValueChange={(val) => {
+                                  const chosen = variantOptions.find(o => o.id === val);
+                                  updatePiece(item.cartItemId, piece.id, {
+                                    variant_id: val,
+                                    color: chosen?.color || "",
+                                    size: chosen?.size || "",
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-xs flex-1">
+                                  <SelectValue placeholder="اختر المقاس / اللون" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {variantOptions.map(opt => (
+                                    <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               {!piece.variant_id ? (
-                                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" title="اختر الخيارات" />
+                                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                               ) : (
                                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                               )}
