@@ -18,15 +18,25 @@ export const handlePlaceOrder = async (
         total_price: totalPrice,
         status: status || "pending",
       },
-      items_data: cartItems.map((item) => ({
-        product_id: item.id,
-        quantity: item.count,
-        unit_price: item.price,
-        name: item.name,
-        size: item.size || null,
-        color: item.color || null,
-        image_url: item.image_url || null,
-      })),
+      items_data: cartItems.flatMap(group => {
+        const counts = {};
+        group.pieces.forEach(p => {
+          counts[p.variant_id] = (counts[p.variant_id] || 0) + 1;
+        });
+
+        return Object.entries(counts).map(([varId, qty]) => {
+          const variant = group.variants.find(v => v.id === varId);
+          return {
+            product_id: varId,
+            quantity: qty,
+            unit_price: variant ? variant.price : group.price,
+            name: variant ? variant.name : group.name,
+            size: variant ? variant.size : null,
+            color: variant ? variant.color : null,
+            image_url: variant ? variant.image_url : group.image_url,
+          };
+        });
+      }),
     });
 
     if (error) {

@@ -55,181 +55,7 @@ const statusConfig = {
   default: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
-// Internal Component to Handle Pending Inline Variant Selection
-const PendingVariantSelector = ({ item, onResolve, onRemove }) => {
-  const [selectedColor, setSelectedColor] = useState("");
-  const [selectedSize, setSelectedSize] = useState("");
 
-  const availableColors = useMemo(() => {
-    const colors = item.variants.map(v => v.color).filter(Boolean);
-    return Array.from(new Set(colors));
-  }, [item]);
-
-  // Auto-select if there's exactly 1 color
-  React.useEffect(() => {
-    if (availableColors.length === 1 && !selectedColor) {
-      setSelectedColor(availableColors[0]);
-    }
-  }, [availableColors, selectedColor]);
-
-  const availableSizes = useMemo(() => {
-    // If there are colors but none selected yet, don't show sizes
-    if (availableColors.length > 1 && !selectedColor) return [];
-
-    // Filter variants by the selected color (or show all if no colors exist)
-    const relevantVariants = selectedColor
-      ? item.variants.filter(v => v.color === selectedColor)
-      : item.variants;
-
-    const sizes = relevantVariants.map(v => v.size).filter(Boolean);
-    return Array.from(new Set(sizes));
-  }, [item, selectedColor, availableColors]);
-
-  // Auto-select if there's exactly 1 size
-  React.useEffect(() => {
-    if (availableSizes.length === 1 && !selectedSize) {
-      setSelectedSize(availableSizes[0]);
-    }
-  }, [availableSizes, selectedSize]);
-
-  const handleResolve = () => {
-    // Find exact variant
-    let variant;
-    if (item.variants.length === 1) {
-      variant = item.variants[0];
-    } else {
-      variant = item.variants.find(v =>
-        (v.color || "") === (selectedColor || "") &&
-        (v.size || "") === (selectedSize || "")
-      );
-    }
-
-    if (!variant) {
-      toast.error("هذا الخيار غير متاح حالياً");
-      return;
-    }
-    if (variant.stock_quantity <= 0) {
-      toast.error("هذا المنتج نفذ من المخزون");
-      return;
-    }
-
-    onResolve(variant);
-  };
-
-  // Auto-resolve if only one variant exists in this group
-  React.useEffect(() => {
-    if (item.variants && item.variants.length === 1) {
-      const v = item.variants[0];
-      if (v.stock_quantity > 0) {
-        onResolve(v);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Find selected variant's stock for display
-  const selectedVariant = useMemo(() => {
-    if (!selectedSize && !selectedColor) return null;
-    return item.variants.find(v =>
-      (v.color || "") === (selectedColor || "") &&
-      (v.size || "") === (selectedSize || "")
-    );
-  }, [item, selectedColor, selectedSize]);
-
-  return (
-    <div className="flex flex-col gap-2 bg-slate-50 border-2 border-primary/40 rounded-lg p-3 relative shadow-inner animate-in fade-in zoom-in-95 duration-200">
-      <div className="flex gap-3">
-        <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded bg-white object-cover border" />
-        <div className="flex-1">
-          <h4 className="text-sm font-bold line-clamp-1 pr-6 flex items-center gap-1.5 text-primary">
-            <AlertCircle className="w-4 h-4" /> تحديد الخيارات
-          </h4>
-          <p className="text-xs text-muted-foreground mt-0.5">{item.name}</p>
-        </div>
-      </div>
-
-      <div className="space-y-3 pt-2 mt-1 border-t border-dashed">
-        {availableColors.length > 1 && (
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-bold text-slate-500">اللون:</Label>
-            <Select value={selectedColor} onValueChange={(val) => { setSelectedColor(val); setSelectedSize(""); }}>
-              <SelectTrigger className="h-8 text-xs bg-white">
-                <SelectValue placeholder="اختر اللون" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableColors.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {availableColors.length === 1 && (
-          <div className="flex items-center gap-2 text-xs">
-            <Palette className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="font-bold text-slate-500">اللون:</span>
-            <Badge variant="secondary" className="text-xs">{availableColors[0]}</Badge>
-          </div>
-        )}
-
-        {availableSizes.length > 1 && (
-          <div className="flex flex-col gap-1.5 animate-in slide-in-from-top-2">
-            <Label className="text-xs font-bold text-slate-500">المقاس:</Label>
-            <Select value={selectedSize} onValueChange={setSelectedSize}>
-              <SelectTrigger className="h-8 text-xs bg-white">
-                <SelectValue placeholder="اختر المقاس" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableSizes.map(s => {
-                  const v = item.variants.find(v => v.size === s && (!selectedColor || v.color === selectedColor));
-                  const stock = v ? v.stock_quantity : 0;
-                  return (
-                    <SelectItem key={s} value={s} disabled={stock === 0}>
-                      {s} {stock === 0 ? "(نفذ)" : `(${stock})`}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {availableSizes.length === 1 && (
-          <div className="flex items-center gap-2 text-xs">
-            <Ruler className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="font-bold text-slate-500">المقاس:</span>
-            <Badge variant="secondary" className="text-xs">{availableSizes[0]}</Badge>
-          </div>
-        )}
-
-        {selectedVariant && (
-          <div className="flex items-center gap-2 text-xs text-emerald-600 font-semibold">
-            <CheckCircle2 className="w-3.5 h-3.5" /> المتوفر: {selectedVariant.stock_quantity}
-          </div>
-        )}
-
-        <Button
-          size="sm"
-          className="w-full mt-2 h-8 font-bold gap-1 shadow-md shadow-primary/20"
-          onClick={handleResolve}
-          disabled={
-            (availableColors.length > 0 && !selectedColor) ||
-            (availableSizes.length > 0 && !selectedSize) ||
-            (selectedVariant && selectedVariant.stock_quantity === 0)
-          }
-        >
-          <CheckCircle2 className="w-4 h-4" /> تأكيد الإضافة
-        </Button>
-      </div>
-
-      <button
-        className="absolute top-2 right-2 text-muted-foreground hover:text-rose-500 opacity-80"
-        onClick={onRemove}
-      >
-        <CircleX size={18} fill="currentColor" className="text-white bg-foreground rounded-full" />
-      </button>
-    </div>
-  );
-};
 
 export default function NewOrder() {
   const { t } = useTranslation();
@@ -257,11 +83,12 @@ export default function NewOrder() {
     setCartItems,
     countOfItems,
     subTotal,
+    addGroupToCart,
+    updatePiece,
     increaseCount,
     decreaseCount,
     removeFromCart,
-    addPendingGroup,
-    resolvePendingGroup
+    clearCart
   } = Cart();
 
   // Group products by name
@@ -314,15 +141,15 @@ export default function NewOrder() {
   }, [countOfItems]);
 
   const grandTotal = tieredTotal + shippingCost;
-  const hasPendingItems = cartItems.some(i => i.isPending);
+  const missingVariants = cartItems.some(i => i.pieces.some(p => !p.variant_id));
 
   const handleOrder = async (status) => {
     if (cartItems.length < 1) {
       toast.warning(t("new_order.empty_cart"));
       return;
     }
-    if (hasPendingItems) {
-      toast.warning("يجب تأكيد كافة التعديلات في السلة أولاً");
+    if (missingVariants) {
+      toast.warning("يجب تحديد اللون والمقاس لجميع المنتجات في السلة");
       return;
     }
     if (!customerName.trim()) {
@@ -427,7 +254,7 @@ export default function NewOrder() {
                           key={group.name}
                           onClick={() => {
                             if (compoundStock > 0) {
-                              addPendingGroup(group);
+                              addGroupToCart(group);
                               setOpenCart(true);
                             }
                           }}
@@ -556,61 +383,99 @@ export default function NewOrder() {
               ) : (
                 cartItems.map((item) => (
                   <div key={item.cartItemId}>
-                    {item.isPending ? (
-                      <PendingVariantSelector
-                        item={item}
-                        onResolve={(variant) => resolvePendingGroup(item.cartItemId, variant)}
-                        onRemove={() => removeFromCart(item.cartItemId)}
-                      />
-                    ) : (
-                      <div className="flex flex-col gap-2 bg-white rounded-lg border shadow-sm p-3 relative group animate-in fade-in duration-300">
-                        <div className="flex gap-3">
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            loading="lazy"
-                            className="w-16 h-16 rounded-md object-cover border shrink-0"
-                          />
-                          <div className="flex-1">
-                            <h4 className="text-sm font-bold line-clamp-1 pr-6">{item.name}</h4>
-                            <div className="flex gap-2 mt-1 flex-wrap">
-                              {(item.color && item.color !== "default") && (
-                                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]"><Palette className="w-2.5 h-2.5 mr-1" />{item.color}</Badge>
-                              )}
-                              {(item.size && item.size !== "default") && (
-                                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]"><Ruler className="w-2.5 h-2.5 mr-1" />{item.size}</Badge>
-                              )}
-                            </div>
-                            <div className="font-black text-primary text-sm mt-1.5 flex justify-between items-center">
-                              <span>{item.price * item.count} {t("new_order.egp")}</span>
-                            </div>
+                    <div className="flex flex-col gap-2 bg-white rounded-lg border shadow-sm p-3 relative group animate-in fade-in duration-300">
+                      <div className="flex gap-3">
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          loading="lazy"
+                          className="w-16 h-16 rounded-md object-cover border shrink-0"
+                        />
+                        <div className="flex-1">
+                          <h4 className="text-sm font-bold line-clamp-1 pr-6">{item.name}</h4>
+                          <div className="font-black text-primary text-sm mt-1.5 flex justify-between items-center">
+                            <span>{(item.price || 0) * (item.pieces?.length || 0)} {t("new_order.egp")}</span>
                           </div>
                         </div>
-
-                        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
-                          <span className="text-xs font-bold text-muted-foreground pl-1">
-                            الكمية
-                          </span>
-
-                          <ButtonGroup aria-label="Quantity" className="h-7 w-26 bg-muted/20">
-                            <Button variant="outline" size="icon" className="h-7 w-8" onClick={() => decreaseCount(item.cartItemId)}>
-                              <MinusIcon className="w-3 h-3" />
-                            </Button>
-                            <div className="flex-1 flex items-center justify-center font-bold text-sm min-w-8">{item.count || 1}</div>
-                            <Button variant="outline" size="icon" className="h-7 w-8 inline-flex" disabled={item.stock_quantity === item.count} onClick={() => increaseCount(item.cartItemId, item.stock_quantity)}>
-                              <PlusIcon className="w-3 h-3" />
-                            </Button>
-                          </ButtonGroup>
-                        </div>
-
-                        <button
-                          className="absolute top-2 right-2 text-muted-foreground hover:text-rose-500 transition-colors opacity-80 hover:opacity-100 bg-white p-1 rounded-full"
-                          onClick={() => removeFromCart(item.cartItemId)}
-                        >
-                          <CircleX size={18} fill="currentColor" className="text-white bg-foreground rounded-full" />
-                        </button>
                       </div>
-                    )}
+
+                      {/* Pieces Selection */}
+                      <div className="flex flex-col gap-2 mt-2 pt-2 border-t">
+                        {item.pieces.map((piece, idx) => {
+                          const availableColors = Array.from(new Set(item.variants.map(v => v.color).filter(Boolean)));
+                          const availableSizes = Array.from(new Set(
+                            item.variants.filter(v => !piece.color || v.color === piece.color).map(v => v.size).filter(Boolean)
+                          ));
+
+                          return (
+                            <div key={piece.id} className="flex items-center gap-2 bg-slate-50 p-2 rounded border border-dashed">
+                              <span className="text-xs font-bold w-4">{idx + 1}.</span>
+                              {availableColors.length > 0 && (
+                                <Select
+                                  value={piece.color}
+                                  onValueChange={(val) => {
+                                    let nv = null;
+                                    if (availableSizes.length === 0 || piece.size) {
+                                      nv = item.variants.find(v => v.color === val && (!piece.size || v.size === piece.size));
+                                    }
+                                    updatePiece(item.cartItemId, piece.id, { color: val, size: "", variant_id: nv ? nv.id : null });
+                                  }}
+                                >
+                                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="اللون" /></SelectTrigger>
+                                  <SelectContent>{availableColors.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                </Select>
+                              )}
+
+                              {availableSizes.length > 0 && (
+                                <Select
+                                  value={piece.size}
+                                  onValueChange={(val) => {
+                                    const nv = item.variants.find(v => v.size === val && (!piece.color || v.color === piece.color));
+                                    updatePiece(item.cartItemId, piece.id, { size: val, variant_id: nv ? nv.id : null });
+                                  }}
+                                >
+                                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="المقاس" /></SelectTrigger>
+                                  <SelectContent>{availableSizes.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                </Select>
+                              )}
+
+                              {!piece.variant_id ? (
+                                <AlertCircle className="w-4 h-4 text-amber-500" title="اختر الخيارات" />
+                              ) : (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t">
+                        <span className="text-xs font-bold text-muted-foreground pl-1">
+                          إجمالي العدد
+                        </span>
+
+                        <ButtonGroup aria-label="Quantity" className="h-7 w-26 bg-muted/20">
+                          <Button variant="outline" size="icon" className="h-7 w-8" disabled={item.pieces?.length <= 1} onClick={() => decreaseCount(item.cartItemId)}>
+                            <MinusIcon className="w-3 h-3" />
+                          </Button>
+                          <div className="flex-1 flex items-center justify-center font-bold text-sm min-w-8">{item.pieces?.length || 0}</div>
+                          <Button
+                            variant="outline" size="icon" className="h-7 w-8 inline-flex"
+                            disabled={item.pieces?.length >= item.variants.reduce((acc, v) => acc + v.stock_quantity, 0)}
+                            onClick={() => increaseCount(item.cartItemId)}
+                          >
+                            <PlusIcon className="w-3 h-3" />
+                          </Button>
+                        </ButtonGroup>
+                      </div>
+
+                      <button
+                        className="absolute top-2 right-2 text-muted-foreground hover:text-rose-500 transition-colors opacity-80 hover:opacity-100 bg-white p-1 rounded-full"
+                        onClick={() => removeFromCart(item.cartItemId)}
+                      >
+                        <CircleX size={18} fill="currentColor" className="text-white bg-foreground rounded-full" />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -717,13 +582,13 @@ export default function NewOrder() {
             </div>
 
             <Button
-              disabled={isSubmitting || cartItems.length === 0 || hasPendingItems}
+              disabled={isSubmitting || cartItems.length === 0 || missingVariants}
               className="w-full text-lg shadow-xl shadow-primary/20 hover:shadow-primary/40 font-black h-12 rounded-xl transition-all disabled:opacity-50"
               onClick={() => handleOrder(status)}
             >
               {isSubmitting ? (
                 <><Spinner className="mr-2" /> إتمام الطلب...</>
-              ) : hasPendingItems ? (
+              ) : missingVariants ? (
                 <>أكمل خيارات المنتجات</>
               ) : (
                 <>تأكيد وحفظ الطلب</>
@@ -731,7 +596,7 @@ export default function NewOrder() {
             </Button>
           </div>
         </div>
-      </div>
-    </React.Fragment>
+      </div >
+    </React.Fragment >
   );
 }
