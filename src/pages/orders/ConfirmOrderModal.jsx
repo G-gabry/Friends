@@ -110,18 +110,18 @@ export function ConfirmOrderModal({ isOpen, onClose, order }) {
   }, [editItems]);
 
   // Tiered pricing: same logic as NewOrder
-  // 1pc=500, 2pc=950, 3pc=1350, 4+=(1350+(n-3)*450)
+  // 1pc=550, 2pc=1050, 3pc=1550, 4+=(1550+(n-3)*500)
   const tieredTotal = useMemo(() => {
     if (totalPieces === 0) return 0;
-    if (totalPieces === 1) return 500;
-    if (totalPieces === 2) return 950;
-    if (totalPieces === 3) return 1350;
-    return 1350 + (totalPieces - 3) * 450;
+    if (totalPieces === 1) return 550;
+    if (totalPieces === 2) return 1050;
+    if (totalPieces === 3) return 1550;
+    return 1550 + (totalPieces - 3) * 500;
   }, [totalPieces]);
 
   const discountSaved = useMemo(() => {
     if (totalPieces < 2) return 0;
-    return (totalPieces * 500) - tieredTotal;
+    return (totalPieces * 550) - tieredTotal;
   }, [totalPieces, tieredTotal]);
 
   const grandTotal = tieredTotal + shippingCost;

@@ -22,14 +22,14 @@ export const InvoicePrint = React.forwardRef(({ order, orderItems, profilesMap, 
   // Tiered pricing logic — mirrors NewOrder exactly
   const computeTiered = (pieces) => {
     if (pieces === 0) return 0;
-    if (pieces === 1) return 500;
-    if (pieces === 2) return 950;
-    if (pieces === 3) return 1350;
-    return 1350 + (pieces - 3) * 450;
+    if (pieces === 1) return 550;
+    if (pieces === 2) return 1050;
+    if (pieces === 3) return 1550;
+    return 1550 + (pieces - 3) * 500;
   };
 
   const tieredTotal = computeTiered(totalQuantity);
-  const fullPriceTotal = totalQuantity * 500; // if no discount
+  const fullPriceTotal = totalQuantity * 550; // if no discount
   const discountSaved = fullPriceTotal - tieredTotal;
   // Use prop if provided (accurate), otherwise fallback to subtraction
   const shippingCost = shippingCostProp !== undefined
