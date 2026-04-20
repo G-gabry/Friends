@@ -139,16 +139,16 @@ export default function NewOrder() {
     return Number(cityObj?.price || 85);
   }, [selectedGovernorate, selectedCity]);
 
-  // Tiered pricing: 1 piece = 500, 2 pieces = 950, 3 pieces = 1350
-  // For 4+ pieces: 1350 + (extra * 450 per piece)
+  // Tiered pricing: 1 piece = 550, 2 pieces = 1050, 3 pieces = 1550
+  // For 4+ pieces: 1550 + (extra * 500 per piece)
   const tieredTotal = useMemo(() => {
     const totalPieces = countOfItems;
     if (totalPieces === 0) return 0;
-    if (totalPieces === 1) return 500;
-    if (totalPieces === 2) return 950;
-    if (totalPieces === 3) return 1350;
-    // 4+ pieces: base 1350 + 450 per additional piece
-    return 1350 + (totalPieces - 3) * 450;
+    if (totalPieces === 1) return 550;
+    if (totalPieces === 2) return 1050;
+    if (totalPieces === 3) return 1550;
+    // 4+ pieces: base 1550 + 500 per additional piece
+    return 1550 + (totalPieces - 3) * 500;
   }, [countOfItems]);
 
   const grandTotal = tieredTotal + shippingCost;
@@ -578,7 +578,7 @@ export default function NewOrder() {
               {countOfItems >= 2 && (
                 <div className="flex justify-between text-xs text-emerald-600 font-bold">
                   <span>🎉 خصم الكمية مُطبّق</span>
-                  <span>وفرت {(countOfItems * 500) - tieredTotal} {t("new_order.egp")}</span>
+                  <span>وفرت {(countOfItems * 550) - tieredTotal} {t("new_order.egp")}</span>
                 </div>
               )}
               {shippingCost > 0 && (
