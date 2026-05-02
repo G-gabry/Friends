@@ -13,10 +13,19 @@ export default function Cart() {
 
   // Calculate totals across all pieces inside all cart groups
   const countOfItems = cartItems.reduce((total, item) => total + (item.pieces?.length || 0), 0);
-  const subTotal = cartItems.reduce(
-    (total, item) => total + (item.price || 0) * (item.pieces?.length || 0),
-    0
-  );
+  
+  // Apply the tiered offer pricing logic:
+  // 1 piece = 550, 2 pieces = 1050, 3 pieces = 1550
+  const subTotal = (() => {
+    const setsOfThree = Math.floor(countOfItems / 3);
+    const remainder = countOfItems % 3;
+    
+    let price = setsOfThree * 1550;
+    if (remainder === 1) price += 550;
+    else if (remainder === 2) price += 1050;
+    
+    return price;
+  })();
 
   useEffect(() => {
     localStorage.setItem("cartItemsInLS", JSON.stringify(cartItems));

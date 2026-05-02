@@ -21,6 +21,7 @@ import { ConfirmOrderModal } from "./ConfirmOrderModal";
 import { useState, useRef } from "react";
 import { InvoicePrint } from "@/components/invoice/InvoicePrint";
 import { StickerPrint } from "@/components/invoice/StickerPrint";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { useTranslation } from "react-i18next";
 
@@ -108,6 +109,7 @@ export default function OrdersPage() {
   const [confirmOrderOpen, setConfirmOrderOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [printType, setPrintType] = useState(null);
+  const [selectedForPrint, setSelectedForPrint] = useState(new Set());
 
   const { data: orders = [] } = useOrders();
   const { data: profiles = [] } = useProfiles();
@@ -178,7 +180,26 @@ export default function OrdersPage() {
     ),
   );
 
-  const readyToPrintOrders = filteredOrders?.filter(o => o.status === 'confirmed' || o.status === 'preparing') || [];
+  const readyToPrintOrders = selectedForPrint.size > 0 
+    ? filteredOrders?.filter(o => selectedForPrint.has(o.id)) || []
+    : filteredOrders?.filter(o => o.status === 'confirmed' || o.status === 'preparing') || [];
+
+  const handleToggleSelect = (e, id) => {
+    e.stopPropagation();
+    const next = new Set(selectedForPrint);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedForPrint(next);
+  };
+
+  const handleSelectAll = (e) => {
+    e.stopPropagation();
+    if (selectedForPrint.size === filteredOrders.length && filteredOrders.length > 0) {
+      setSelectedForPrint(new Set());
+    } else {
+      setSelectedForPrint(new Set(filteredOrders.map(o => o.id)));
+    }
+  };
 
   const handleBulkPrint = (type) => {
     if (readyToPrintOrders.length === 0) {
@@ -189,6 +210,7 @@ export default function OrdersPage() {
     setTimeout(() => {
       window.print();
       setPrintType(null);
+      setSelectedForPrint(new Set()); // Clear selection after printing
     }, 300);
   };
 
@@ -228,6 +250,13 @@ export default function OrdersPage() {
 
         <TableHeader className="bg-muted/50">
           <TableRow className="hover:bg-transparent">
+            <TableHead className={`w-10 text-center ${i18n.language === 'ar' ? 'border-l' : 'border-r'}`}>
+              <Checkbox 
+                checked={filteredOrders.length > 0 && selectedForPrint.size === filteredOrders.length}
+                onCheckedChange={(checked) => handleSelectAll({ stopPropagation: () => {} })}
+                aria-label="Select all"
+              />
+            </TableHead>
             <TableHead className={`w-25 font-bold text-foreground overflow-hidden ${i18n.language === 'ar' ? 'text-right border-l' : 'text-left border-r'}`}>
               {t('orders.invoice')}
             </TableHead>
@@ -251,6 +280,13 @@ export default function OrdersPage() {
               key={order.id}
               className="cursor-pointer group"
             >
+              <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
+                <Checkbox 
+                  checked={selectedForPrint.has(order.id)}
+                  onCheckedChange={(checked) => handleToggleSelect({ stopPropagation: () => {} }, order.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </TableCell>
               <TableCell className="font-medium py-3 transition-colors">
                 <span className="text-slate-400 group-hover:text-primary transition-colors">
                   #
@@ -345,7 +381,7 @@ export default function OrdersPage() {
 
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={6} className={`font-bold ${i18n.language === 'ar' ? 'text-left' : 'text-right'}`}>{t('orders.total')}:</TableCell>
+            <TableCell colSpan={7} className={`font-bold ${i18n.language === 'ar' ? 'text-left' : 'text-right'}`}>{t('orders.total')}:</TableCell>
             <TableCell className={`font-bold text-lg text-primary ${i18n.language === 'ar' ? 'text-left' : 'text-right'}`}>{dayTotal}</TableCell>
           </TableRow>
         </TableFooter>

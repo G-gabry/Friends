@@ -107,10 +107,17 @@ export default function BatchTrackingPage() {
        return;
     }
 
-    const { error } = await supabase.rpc('update_order_delivery_with_items', {
-      p_order_id: order.id,
-      p_delivery_status: newStatus
-    });
+    let error;
+    if (["refused", "refused_and_paid", "recycled"].includes(newStatus)) {
+        const res = await supabase.from('orders').update({ delivery_status: newStatus }).eq('id', order.id);
+        error = res.error;
+    } else {
+        const res = await supabase.rpc('update_order_delivery_with_items', {
+          p_order_id: order.id,
+          p_delivery_status: newStatus
+        });
+        error = res.error;
+    }
 
     if (error) {
        toast.error(t("shipping.status_update_error") || "Error updating");
