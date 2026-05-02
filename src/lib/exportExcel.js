@@ -28,12 +28,15 @@ export function exportOrdersToExcel(orders, profiles, allOrderItems, batches) {
     delivered: "تم التوصيل",
     returned: "مرتجع",
     cancelled: "ملغي",
+    refused: "رفض",
+    refused_and_paid: "رفض ودفع شحن",
+    recycled: "تدوير",
   };
 
   // 1. Prepare Header Matrix
   const rawHeaders = [
     "رقم", "اسم العميل", "رقم الهاتف", "المحافظة", "العنوان", 
-    "المنتج", "المقاس", "الكمية", "السعر", 
+    "المنتج", "العدد", "الكمية المطلوبة / المسلمة", "السعر", 
     "شركة الشحن", "حالة التسليم", "ملاحظات"
   ];
   
@@ -80,7 +83,20 @@ export function exportOrdersToExcel(orders, profiles, allOrderItems, batches) {
        ].reverse();
        excelRows.push(rowData);
     } else {
-       items.forEach((item, idx) => {
+       // Group items by name to avoid size duplicates per user request
+       const groupedItems = items.reduce((acc, item) => {
+         const existing = acc.find(i => i.name === item.name);
+         if (existing) {
+            existing.quantity = (parseInt(existing.quantity) || 0) + (parseInt(item.quantity) || 1);
+            existing.delivered_quantity = (parseInt(existing.delivered_quantity) || 0) + (parseInt(item.delivered_quantity) || existing.quantity);
+         } else {
+            acc.push({ ...item });
+         }
+         return acc;
+       }, []);
+       
+       groupedItems.forEach((item, idx) => {
+         const qtyStr = item.delivered_quantity !== undefined ? `${item.quantity} / ${item.delivered_quantity}` : `${item.quantity} / ${item.quantity}`;
          const rowData = [
            idx === 0 ? rowIndex++ : "",  // Auto Number only on first item of order
            order.customer_name || "—",
@@ -88,8 +104,8 @@ export function exportOrdersToExcel(orders, profiles, allOrderItems, batches) {
            extractGovernorate(order.customer_address),
            order.customer_address || "—",
            item.name || "—",
-           item.size || "—",
-           item.quantity || "1",
+           item.quantity || "1", // Use the total quantity for this item as 'العدد'
+           qtyStr, // الكمية المطلوبة / المسلمة
            idx === 0 ? (order.total_price ? `EGP ${order.total_price}` : "—") : "—", // Show total price on first chunk
            order.batch_id ? getBatchName(order.batch_id) : "—",
            statusMap[order.delivery_status || order.status] || order.status || "—",
@@ -206,11 +222,14 @@ export function exportBatchToExcel(batch, orders, allOrderItems) {
     partially_delivered: "تسليم جزئي",
     not_delivered: "لم يتم التسليم",
     returned: "مرتجع",
+    refused: "رفض",
+    refused_and_paid: "رفض ودفع شحن",
+    recycled: "تدوير",
   };
 
   const rawHeaders = [
     "رقم", "اسم العميل", "رقم الهاتف", "المحافظة", "العنوان", 
-    "المنتج", "المقاس", "الكمية المطلوبة / المسلمة", "السعر", 
+    "المنتج", "العدد", "الكمية المطلوبة / المسلمة", "السعر", 
     "شركة الشحن", "حالة التسليم", "ملاحظات"
   ];
   
@@ -249,7 +268,19 @@ export function exportBatchToExcel(batch, orders, allOrderItems) {
        ].reverse();
        excelRows.push(rowData);
     } else {
-       items.forEach((item, idx) => {
+       // Group items by name to avoid size duplicates per user request
+       const groupedItems = items.reduce((acc, item) => {
+         const existing = acc.find(i => i.name === item.name);
+         if (existing) {
+            existing.quantity = (parseInt(existing.quantity) || 0) + (parseInt(item.quantity) || 1);
+            existing.delivered_quantity = (parseInt(existing.delivered_quantity) || 0) + (parseInt(item.delivered_quantity) || existing.quantity);
+         } else {
+            acc.push({ ...item });
+         }
+         return acc;
+       }, []);
+       
+       groupedItems.forEach((item, idx) => {
          const qtyStr = `${item.quantity} / ${item.delivered_quantity ?? item.quantity}`;
          const rowData = [
            idx === 0 ? rowIndex++ : "",  
@@ -258,7 +289,7 @@ export function exportBatchToExcel(batch, orders, allOrderItems) {
            extractGovernorate(order.customer_address),
            order.customer_address || "—",
            item.name || "—",
-           item.size || "—",
+           item.quantity || "1", // Use the total quantity for this item as 'العدد'
            qtyStr,
            idx === 0 ? (order.total_price ? `EGP ${order.total_price}` : "—") : "—", 
            getBatchName(),

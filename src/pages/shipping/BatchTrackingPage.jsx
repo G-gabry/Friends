@@ -45,6 +45,9 @@ const deliveryStatusConfig = {
   partially_delivered: "bg-blue-100 text-blue-700",
   not_delivered: "bg-rose-100 text-rose-700",
   returned: "bg-slate-200 text-slate-800 line-through",
+  refused: "bg-red-100 text-red-700",
+  refused_and_paid: "bg-orange-100 text-orange-700",
+  recycled: "bg-purple-100 text-purple-700",
 };
 
 const deliveryStatusTranslate = {
@@ -53,6 +56,9 @@ const deliveryStatusTranslate = {
   partially_delivered: "تسليم جزئي",
   not_delivered: "لم يتم التسليم",
   returned: "مرتجع",
+  refused: "رفض",
+  refused_and_paid: "رفض ودفع شحن",
+  recycled: "تدوير",
 };
 
 export default function BatchTrackingPage() {
@@ -265,6 +271,9 @@ export default function BatchTrackingPage() {
                           <SelectItem value="partially_delivered">{deliveryStatusTranslate["partially_delivered"]}</SelectItem>
                           <SelectItem value="not_delivered">{deliveryStatusTranslate["not_delivered"]}</SelectItem>
                           <SelectItem value="returned">{deliveryStatusTranslate["returned"]}</SelectItem>
+                          <SelectItem value="refused">{deliveryStatusTranslate["refused"]}</SelectItem>
+                          <SelectItem value="refused_and_paid">{deliveryStatusTranslate["refused_and_paid"]}</SelectItem>
+                          <SelectItem value="recycled">{deliveryStatusTranslate["recycled"]}</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>

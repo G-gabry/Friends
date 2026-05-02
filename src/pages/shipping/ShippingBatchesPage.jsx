@@ -214,11 +214,11 @@ export default function ShippingBatchesPage() {
               {t("shipping.create_batch")}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
+          <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
             <DialogHeader>
               <DialogTitle className="text-xl">{t("shipping.create_batch")}</DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 py-4 shrink-0">
+            <div className="grid grid-cols-2 gap-3 py-2 shrink-0">
               <div>
                 <Label>{t("shipping.company")}</Label>
                 <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder={t("shipping.select_company")} />
@@ -315,7 +315,7 @@ export default function ShippingBatchesPage() {
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-[120px] border rounded-md bg-muted/20 p-2">
+            <div className="flex-1 overflow-y-auto border rounded-md bg-muted/20 p-2">
               {isLoadingPreparing ? (
                 <div className="p-4 flex justify-center"><Spinner /></div>
               ) : filteredOrders.length === 0 ? (
