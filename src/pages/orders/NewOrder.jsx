@@ -139,19 +139,7 @@ export default function NewOrder() {
     return Number(cityObj?.price || 85);
   }, [selectedGovernorate, selectedCity]);
 
-  // Tiered pricing: 1 piece = 550, 2 pieces = 1050, 3 pieces = 1550
-  // For 4+ pieces: 1550 + (extra * 500 per piece)
-  const tieredTotal = useMemo(() => {
-    const totalPieces = countOfItems;
-    if (totalPieces === 0) return 0;
-    if (totalPieces === 1) return 550;
-    if (totalPieces === 2) return 1050;
-    if (totalPieces === 3) return 1550;
-    // 4+ pieces: base 1550 + 500 per additional piece
-    return 1550 + (totalPieces - 3) * 500;
-  }, [countOfItems]);
-
-  const grandTotal = tieredTotal + shippingCost;
+  const grandTotal = subTotal + shippingCost;
   const missingVariants = cartItems.some(i => i.pieces?.some(p => !p.variant_id));
 
   const handleOrder = async (status) => {
@@ -573,14 +561,8 @@ export default function NewOrder() {
             <div className="space-y-1.5 pt-1">
               <div className="flex justify-between text-sm font-semibold text-muted-foreground">
                 <span>سعر القطع ({countOfItems} قطعة)</span>
-                <span>{tieredTotal} {t("new_order.egp")}</span>
+                <span>{subTotal.toLocaleString()} {t("new_order.egp")}</span>
               </div>
-              {countOfItems >= 2 && (
-                <div className="flex justify-between text-xs text-emerald-600 font-bold">
-                  <span>🎉 خصم الكمية مُطبّق</span>
-                  <span>وفرت {(countOfItems * 550) - tieredTotal} {t("new_order.egp")}</span>
-                </div>
-              )}
               {shippingCost > 0 && (
                 <div className="flex justify-between text-sm font-semibold text-muted-foreground">
                   <span className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> تكلفة الشحن</span>

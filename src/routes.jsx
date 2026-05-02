@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, redirect } from "react-router-dom";
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { AdminRoute } from "./components/auth/AdminRoute";
 import OrdersLayout from "./layouts/OrdersLayout";
 
 // Pages
@@ -65,7 +66,11 @@ export const router = createBrowserRouter(
       children: [
         {
           index: true,
-          element: <DashboardPage />,
+          element: (
+            <AdminRoute>
+              <DashboardPage />
+            </AdminRoute>
+          ),
           loader: dashboardLoader,
         },
         {

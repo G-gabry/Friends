@@ -37,6 +37,29 @@ const formatDate = new Intl.DateTimeFormat("en", {
   day: "numeric",
 });
 
+const SHIPPING_ZONES = [
+  {
+    id: "all",
+    label: "جميع المناطق",
+    governorates: [],
+  },
+  {
+    id: "zone1",
+    label: "منطقة 1 — الدلتا والقناة",
+    governorates: ["الدقهلية", "الشرقية", "الغربية", "كفر الشيخ", "المنوفية", "البحيرة", "دمياط", "الإسكندرية", "بورسعيد", "الإسماعيلية", "السويس", "الفيوم", "بني سويف"],
+  },
+  {
+    id: "zone2",
+    label: "منطقة 2 — القاهرة الكبرى",
+    governorates: ["القاهرة", "الجيزة", "القليوبية"],
+  },
+  {
+    id: "zone3",
+    label: "منطقة 3 — الصعيد والحدود",
+    governorates: ["المنيا", "أسيوط", "سوهاج", "قنا", "الأقصر", "أسوان", "البحر الأحمر", "الوادي الجديد", "مطروح", "شمال سيناء", "جنوب سيناء"],
+  },
+];
+
 export default function ShippingBatchesPage() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -53,6 +76,35 @@ export default function ShippingBatchesPage() {
   const [company, setCompany] = useState("");
   const [date, setDate] = useState("");
   const [selectedOrders, setSelectedOrders] = useState(new Set());
+  const [selectedZone, setSelectedZone] = useState("all");
+
+  // Filter orders by selected zone
+  const zoneGovs = SHIPPING_ZONES.find(z => z.id === selectedZone)?.governorates || [];
+  const filteredOrders = selectedZone === "all"
+    ? preparingOrders
+    : preparingOrders.filter(order =>
+        zoneGovs.some(gov => (order.customer_address || "").includes(gov))
+      );
+
+  const handleSelectAllZone = () => {
+    const allIds = new Set(filteredOrders.map(o => o.id));
+    setSelectedOrders(allIds);
+  };
+
+  const handleDeselectAll = () => setSelectedOrders(new Set());
+
+  const handleZoneClick = (zoneId) => {
+    setSelectedZone(zoneId);
+    if (zoneId === "all") {
+      setSelectedOrders(new Set());
+    } else {
+      const zoneGovs = SHIPPING_ZONES.find(z => z.id === zoneId)?.governorates || [];
+      const zoneOrders = preparingOrders.filter(order =>
+        zoneGovs.some(gov => (order.customer_address || "").includes(gov))
+      );
+      setSelectedOrders(new Set(zoneOrders.map(o => o.id)));
+    }
+  };
 
   const handleToggleOrder = (id) => {
     const newSelection = new Set(selectedOrders);
@@ -177,15 +229,102 @@ export default function ShippingBatchesPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-[300px] border rounded-md bg-muted/20 p-2">
-              <h3 className="font-bold text-sm mb-2 px-2">اختر الطلبات الجاهزة:</h3>
+            {/* Zone Filter */}
+            <div className="shrink-0 pb-3 space-y-2">
+              <Label className="text-sm font-bold">فلتر حسب المنطقة — اضغط لتحديد الكل تلقائياً:</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {/* All */}
+                <button
+                  type="button"
+                  onClick={() => handleZoneClick("all")}
+                  className={`col-span-2 rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all ${
+                    selectedZone === "all"
+                      ? "border-slate-500 bg-slate-100 text-slate-800"
+                      : "border-slate-200 bg-white text-slate-500 hover:border-slate-400"
+                  }`}
+                >
+                  🌐 جميع المناطق ({preparingOrders.length} طلب)
+                </button>
+
+                {/* Zone 2 — Greater Cairo */}
+                <button
+                  type="button"
+                  onClick={() => handleZoneClick("zone2")}
+                  className={`rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all ${
+                    selectedZone === "zone2"
+                      ? "border-blue-500 bg-blue-50 text-blue-800"
+                      : "border-blue-100 bg-white text-blue-600 hover:border-blue-400"
+                  }`}
+                >
+                  🏙️ القاهرة الكبرى
+                  <span className="block text-xs font-normal opacity-70">القاهرة · الجيزة · القليوبية</span>
+                  <span className="block text-xs font-bold mt-1">
+                    {preparingOrders.filter(o =>
+                      SHIPPING_ZONES.find(z => z.id === "zone2").governorates.some(g => (o.customer_address || "").includes(g))
+                    ).length} طلب
+                  </span>
+                </button>
+
+                {/* Zone 1 — Delta & Canal */}
+                <button
+                  type="button"
+                  onClick={() => handleZoneClick("zone1")}
+                  className={`rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all ${
+                    selectedZone === "zone1"
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                      : "border-emerald-100 bg-white text-emerald-600 hover:border-emerald-400"
+                  }`}
+                >
+                  🌾 الدلتا والقناة
+                  <span className="block text-xs font-normal opacity-70">الإسكندرية · الدقهلية · الشرقية · الغربية والمزيد</span>
+                  <span className="block text-xs font-bold mt-1">
+                    {preparingOrders.filter(o =>
+                      SHIPPING_ZONES.find(z => z.id === "zone1").governorates.some(g => (o.customer_address || "").includes(g))
+                    ).length} طلب
+                  </span>
+                </button>
+
+                {/* Zone 3 — Upper Egypt & Borders */}
+                <button
+                  type="button"
+                  onClick={() => handleZoneClick("zone3")}
+                  className={`col-span-2 rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all ${
+                    selectedZone === "zone3"
+                      ? "border-amber-500 bg-amber-50 text-amber-800"
+                      : "border-amber-100 bg-white text-amber-600 hover:border-amber-400"
+                  }`}
+                >
+                  🏔️ الصعيد والحدود
+                  <span className="block text-xs font-normal opacity-70">المنيا · أسيوط · سوهاج · قنا · الأقصر · أسوان والمزيد</span>
+                  <span className="block text-xs font-bold mt-1">
+                    {preparingOrders.filter(o =>
+                      SHIPPING_ZONES.find(z => z.id === "zone3").governorates.some(g => (o.customer_address || "").includes(g))
+                    ).length} طلب
+                  </span>
+                </button>
+              </div>
+
+              {/* Selection summary */}
+              {selectedOrders.size > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-emerald-600 font-semibold">✓ {selectedOrders.size} طلب محدد</span>
+                  <button type="button" onClick={handleDeselectAll} className="text-rose-500 hover:text-rose-700 font-medium">
+                    إلغاء تحديد الكل
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto min-h-[280px] border rounded-md bg-muted/20 p-2">
               {isLoadingPreparing ? (
                 <div className="p-4 flex justify-center"><Spinner /></div>
-              ) : preparingOrders.length === 0 ? (
-                <div className="text-center p-8 text-muted-foreground bg-white rounded-md mx-2">لا يوجد طلبات جاهزة حالياً (preparing)</div>
+              ) : filteredOrders.length === 0 ? (
+                <div className="text-center p-8 text-muted-foreground bg-white rounded-md mx-2">
+                  {preparingOrders.length === 0 ? "لا يوجد طلبات جاهزة حالياً" : "لا توجد طلبات في هذه المنطقة"}
+                </div>
               ) : (
                 <div className="space-y-2 px-2">
-                  {preparingOrders.map(order => (
+                  {filteredOrders.map(order => (
                     <div key={order.id} className="flex items-center space-x-3 rtl:space-x-reverse bg-white p-3 rounded-lg border shadow-sm cursor-pointer hover:border-primary" onClick={() => handleToggleOrder(order.id)}>
                       <Checkbox id={`order-${order.id}`} checked={selectedOrders.has(order.id)} onCheckedChange={() => handleToggleOrder(order.id)} />
                       <div className="flex-1">
@@ -202,7 +341,7 @@ export default function ShippingBatchesPage() {
             </div>
 
             <DialogFooter className="mt-4 gap-2 pt-2 border-t shrink-0">
-                <Button variant="outline" onClick={() => setCreateModalOpen(false)}>{t("common.cancel")}</Button>
+                <Button variant="outline" onClick={() => { setCreateModalOpen(false); setSelectedZone("all"); setSelectedOrders(new Set()); }}>{t("common.cancel")}</Button>
                 <Button onClick={handleCreateBatch} disabled={isSubmitting || selectedOrders.size === 0}>
                    {isSubmitting ? <Spinner className="mr-2" /> : null}
                    {t("shipping.create_batch")} ({selectedOrders.size})
