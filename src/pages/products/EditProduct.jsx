@@ -41,7 +41,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTranslation } from "react-i18next";
 
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "2XL", "3XL"];
+const SIZES = ["XL", "2XL", "3XL", "4XL"];
 
 const productSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(50),
