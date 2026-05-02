@@ -214,7 +214,7 @@ export default function ShippingBatchesPage() {
               {t("shipping.create_batch")}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
+          <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
             <DialogHeader>
               <DialogTitle className="text-xl">{t("shipping.create_batch")}</DialogTitle>
             </DialogHeader>
@@ -230,14 +230,14 @@ export default function ShippingBatchesPage() {
             </div>
 
             {/* Zone Filter */}
-            <div className="shrink-0 pb-3 space-y-2">
+            <div className="shrink-0 pb-2 space-y-1.5">
               <Label className="text-sm font-bold">فلتر حسب المنطقة — اضغط لتحديد الكل تلقائياً:</Label>
               <div className="grid grid-cols-2 gap-2">
                 {/* All */}
                 <button
                   type="button"
                   onClick={() => handleZoneClick("all")}
-                  className={`col-span-2 rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all ${
+                  className={`col-span-2 rounded-lg border-2 px-3 py-1.5 text-sm font-semibold transition-all ${
                     selectedZone === "all"
                       ? "border-slate-500 bg-slate-100 text-slate-800"
                       : "border-slate-200 bg-white text-slate-500 hover:border-slate-400"
@@ -250,7 +250,7 @@ export default function ShippingBatchesPage() {
                 <button
                   type="button"
                   onClick={() => handleZoneClick("zone2")}
-                  className={`rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all ${
+                  className={`rounded-lg border-2 px-3 py-1.5 text-sm font-semibold transition-all ${
                     selectedZone === "zone2"
                       ? "border-blue-500 bg-blue-50 text-blue-800"
                       : "border-blue-100 bg-white text-blue-600 hover:border-blue-400"
@@ -269,7 +269,7 @@ export default function ShippingBatchesPage() {
                 <button
                   type="button"
                   onClick={() => handleZoneClick("zone1")}
-                  className={`rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all ${
+                  className={`rounded-lg border-2 px-3 py-1.5 text-sm font-semibold transition-all ${
                     selectedZone === "zone1"
                       ? "border-emerald-500 bg-emerald-50 text-emerald-800"
                       : "border-emerald-100 bg-white text-emerald-600 hover:border-emerald-400"
@@ -288,7 +288,7 @@ export default function ShippingBatchesPage() {
                 <button
                   type="button"
                   onClick={() => handleZoneClick("zone3")}
-                  className={`col-span-2 rounded-lg border-2 px-3 py-2 text-sm font-semibold transition-all ${
+                  className={`col-span-2 rounded-lg border-2 px-3 py-1.5 text-sm font-semibold transition-all ${
                     selectedZone === "zone3"
                       ? "border-amber-500 bg-amber-50 text-amber-800"
                       : "border-amber-100 bg-white text-amber-600 hover:border-amber-400"
@@ -315,7 +315,7 @@ export default function ShippingBatchesPage() {
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-[280px] border rounded-md bg-muted/20 p-2">
+            <div className="flex-1 overflow-y-auto min-h-[120px] border rounded-md bg-muted/20 p-2">
               {isLoadingPreparing ? (
                 <div className="p-4 flex justify-center"><Spinner /></div>
               ) : filteredOrders.length === 0 ? (
