@@ -39,6 +39,9 @@ export function PartialDeliveryModal({ isOpen, onClose, order, orderItems }) {
       delivered_quantity: quantities[id]
     }));
 
+    // Sync main status to delivered
+    await supabase.from('orders').update({ status: 'delivered' }).eq('id', order.id);
+
     const { error } = await supabase.rpc('update_order_delivery_with_items', {
       p_order_id: order.id,
       p_delivery_status: 'partially_delivered',

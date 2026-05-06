@@ -107,11 +107,21 @@ export default function BatchTrackingPage() {
        return;
     }
 
-    let error;
+    let mainStatus = "shipped";
+    if (newStatus === "delivered" || newStatus === "partially_delivered") {
+        mainStatus = "delivered";
+    } else if (["returned", "refused", "refused_and_paid", "not_delivered"].includes(newStatus)) {
+        mainStatus = "returned";
+    }
+
     if (["refused", "refused_and_paid", "recycled"].includes(newStatus)) {
-        const res = await supabase.from('orders').update({ delivery_status: newStatus }).eq('id', order.id);
+        const res = await supabase.from('orders').update({ 
+           delivery_status: newStatus,
+           status: mainStatus
+        }).eq('id', order.id);
         error = res.error;
     } else {
+        await supabase.from('orders').update({ status: mainStatus }).eq('id', order.id);
         const res = await supabase.rpc('update_order_delivery_with_items', {
           p_order_id: order.id,
           p_delivery_status: newStatus
@@ -155,7 +165,7 @@ export default function BatchTrackingPage() {
       .from("orders")
       .update({
         batch_id: batchId,
-        status: "in_delivery", 
+        status: "shipped", 
         delivery_status: "pending"
       })
       .in("id", orderIds);
