@@ -89,15 +89,15 @@ function calcOrderAmount(order) {
   const status   = order.delivery_status;
 
   if (status === "delivered" || status === "partially_delivered") {
-    // Shipping office keeps their fee, gives us the rest
+    // Shipping office collects from customer, keeps their fee, gives us the rest
     return price - shipping;
   }
   if (status === "refused_and_paid") {
-    // Shipping office takes their fee from our settlement → we lose shipping cost
-    return -shipping;
+    // Customer paid the shipping fee directly to shipping company → we get 0, products come back
+    return 0;
   }
   if (status === "refused_refused") {
-    // We pay 35 EGP to shipping office
+    // We pay 35 EGP penalty to shipping office
     return -35;
   }
   // returned, refused, not_delivered, recycled, pending → 0
